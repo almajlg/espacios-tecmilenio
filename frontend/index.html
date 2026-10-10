@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacios Tecmilenio | Control y Agendamiento de Espacios</title>
+    <meta name="description"
+        content="Sistema simple e intuitivo para reserva y control de aulas en Edificio 1, Edificio 2, laboratorios, canchas y terraza de Universidad Tecmilenio.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Iconos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- BARRA LATERAL (SIDEBAR) -->
+        <aside class="sidebar">
+            <div class="brand-container">
+                <div class="brand-logo-wrapper">
+                    <img src="img/logo-tecmilenio.png" alt="Universidad Tecmilenio" class="brand-logo-img">
+                </div>
+                <div class="brand-text">
+                    <h2>Agenda de Espacios</h2>
+                    <span>Campus Cuautitlán Izcalli</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="dashboard">
+                    <i class="ph-bold ph-chart-pie-slice"></i>
+                    <span>Panel Principal</span>
+                </button>
+                <button class="nav-item" data-tab="agenda">
+                    <i class="ph-bold ph-calendar-check"></i>
+                    <span>Agenda y Horarios</span>
+                </button>
+                <button class="nav-item" data-tab="edificio1">
+                    <i class="ph-bold ph-graduation-cap"></i>
+                    <span>Edificio 1 (Prepa)</span>
+                    <span class="badge-counter badge-edif1" id="badgeEdificio1">7</span>
+                </button>
+                <button class="nav-item" data-tab="edificio2">
+                    <i class="ph-bold ph-briefcase"></i>
+                    <span>Edificio 2 (Prof)</span>
+                    <span class="badge-counter badge-edif2" id="badgeEdificio2">11</span>
+                </button>
+                <button class="nav-item" data-tab="aldea">
+                    <i class="ph-bold ph-tree"></i>
+                    <span>Aldea</span>
+                    <span class="badge-counter badge-aldea" id="badgeAldea">13</span>
+                </button>
+                <button class="nav-item" data-tab="espacios">
+                    <i class="ph-bold ph-door"></i>
+                    <span>Todos los Espacios</span>
+                    <span class="badge-counter" id="badgeTotalEspacios">0</span>
+                </button>
+                <button class="nav-item" data-tab="usuarios">
+                    <i class="ph-bold ph-users-three"></i>
+                    <span>Profesores y Resp.</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Sistema Conectado</span>
+                </div>
+                <button class="btn-quick-reserve" id="btnOpenModalReserva">
+                    <i class="ph-bold ph-plus-circle"></i>
+                    <span>Agendar Espacio</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- HEADER SUPERIOR -->
+            <header class="top-header">
+                <div class="header-search">
+                    <i class="ph-bold ph-magnifying-glass"></i>
+                    <input type="text" id="globalSearchInput"
+                        placeholder="Buscar por salón (ej. 1103, 2101, Terraza), evento o profesor...">
+                </div>
+
+                <div class="header-actions">
+                    <div class="current-date-chip">
+                        <i class="ph-bold ph-calendar"></i>
+                        <span id="currentDateDisplay">Hoy</span>
+                    </div>
+                    <button class="btn-icon" id="btnRefresh" title="Actualizar datos">
+                        <i class="ph-bold ph-arrows-clockwise"></i>
+                    </button>
+                    <button class="btn-primary" id="btnOpenModalEspacio">
+                        <i class="ph-bold ph-plus"></i>
+                        <span>Nuevo Espacio</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENEDOR DE PESTAÑAS -->
+            <div class="views-wrapper">
+
+                <!-- ================================================================ -->
+                <!-- 1. VISTA DASHBOARD -->
+                <!-- ================================================================ -->
+                <section class="tab-view active" id="view-dashboard">
+                    <div class="dashboard-hero">
+                        <div class="hero-info">
+                            <div class="hero-badge">
+                                <i class="ph-bold ph-check-circle"></i> Universidad Tecmilenio
+                            </div>
+                            <h1>Control de Espacios Tecmilenio</h1>
+                            <p>Reserva fácilmente aulas en el Edificio 1, Edificio 2, laboratorios, canchas
+                                deportivas y terraza con verificación automática de horarios.</p>
+                            <div class="hero-actions">
+                                <button class="btn-glow"
+                                    onclick="document.getElementById('btnOpenModalReserva').click()">
+                                    <i class="ph-bold ph-calendar-plus"></i> Agendar Nueva Reserva
+                                </button>
+                                <button class="btn-ghost" onclick="switchTab('agenda')">
+                                    <i class="ph-bold ph-calendar"></i> Ver Agenda Completa
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hero-quick-stats">
+                            <div class="stat-pill">
+                                <span class="stat-num" id="statOcupadosHoy">0</span>
+                                <span class="stat-desc">Ocupados Hoy</span>
+                            </div>
+                            <div class="stat-pill">
+                                <span class="stat-num" id="statReservasActivas">0</span>
+                                <span class="stat-desc">Reservas Activas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TARJETAS KPI -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-emerald">
+                                <i class="ph-bold ph-door-open"></i>
+                            </div>
+                            <div class="stat-data">
+                                <span class="stat-label">Total de Espacios</span>
+                                <h3 id="cardTotalEspacios">0</h3>
+                                <small class="stat-meta">Aulas, laboratorios y canchas</small>
+                            </div>
+                        </div>
+
+                        <div class="stat-card card-edif1" style="cursor:pointer;" onclick="switchTab('edificio1')">
+                            <div class="stat-icon icon-emerald">
+                                <i class="ph-bold ph-graduation-cap"></i>
+                            </div>
+                            <div class="stat-data">
+                                <div class="card-badge-pill pill-green">Preparatoria</div>
+                                <span class="stat-label">Edificio 1 (Prepa)</span>
+                                <h3 id="cardEdificio1Espacios">7</h3>
+                                <small class="stat-meta">Aulas 1102 a 1310</small>
+                            </div>
+                        </div>
+
+                        <div class="stat-card card-edif2" style="cursor:pointer;" onclick="switchTab('edificio2')">
+                            <div class="stat-icon icon-emerald">
+                                <i class="ph-bold ph-briefcase"></i>
+                            </div>
+                            <div class="stat-data">
+                                <div class="card-badge-pill pill-green">Profesional</div>
+                                <span class="stat-label">Edificio 2 (Profesional)</span>
+                                <h3 id="cardEdificio2Espacios">11</h3>
+                                <small class="stat-meta">Aulas 2201 a 2405</small>
+                            </div>
+                        </div>
+
+                        <div class="stat-card card-aldea" style="cursor:pointer;" onclick="switchTab('aldea')">
+                            <div class="stat-icon icon-emerald">
+                                <i class="ph-bold ph-tree"></i>
+                            </div>
+                            <div class="stat-data">
+                                <div class="card-badge-pill pill-green">Aldea</div>
+                                <span class="stat-label">Aldea</span>
+                                <h3 id="cardAldeaEspacios">13</h3>
+                                <small class="stat-meta">Aulas 2101 a 2113</small>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon icon-amber">
+                                <i class="ph-bold ph-sun-horizon"></i>
+                            </div>
+                            <div class="stat-data">
+                                <span class="stat-label">Otros</span>
+                                <h3 id="cardOtrosEspacios">13</h3>
+                                <small class="stat-meta">Terraza, Labs, Canchas</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN INFERIOR DASHBOARD -->
+                    <div class="dashboard-split">
+                        <!-- Próximas reservas -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="ph-bold ph-clock-countdown"></i>
+                                    <h3>Próximos Eventos Agendados</h3>
+                                </div>
+                                <button class="btn-link" onclick="switchTab('agenda')">Ver todos</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="custom-table" id="tableProximasReservas">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha & Hora</th>
+                                            <th>Espacio</th>
+                                            <th>Ubicación</th>
+                                            <th>Evento / Actividad</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyProximasReservas">
+                                        <!-- Filas dinámicas -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Acceso rápido a Edificios -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="ph-bold ph-squares-four"></i>
+                                    <h3>Aulas de Acceso Rápido</h3>
+                                </div>
+                                <span class="tag-live">Clic para reservar</span>
+                            </div>
+
+                            <div class="quick-buildings-section">
+                                <div class="building-subgroup">
+                                    <div class="building-header-mini">
+                                        <div class="bh-title">
+                                            <i class="ph-bold ph-graduation-cap" style="color:var(--tecmilenio-green);"></i>
+                                            <strong>Edificio 1 (Preparatoria)</strong>
+                                        </div>
+                                        <button class="btn-link-sm" onclick="switchTab('edificio1')">Ver todos</button>
+                                    </div>
+                                    <div class="aldea-mini-grid" id="gridMiniEdificio1">
+                                        <!-- Chips de salones 1102 a 1310 -->
+                                    </div>
+                                </div>
+
+                                <div class="building-subgroup" style="margin-top: 14px;">
+                                    <div class="building-header-mini">
+                                        <div class="bh-title">
+                                            <i class="ph-bold ph-briefcase" style="color:var(--tecmilenio-green);"></i>
+                                            <strong>Edificio 2 (Profesional)</strong>
+                                        </div>
+                                        <button class="btn-link-sm" onclick="switchTab('edificio2')">Ver todos</button>
+                                    </div>
+                                    <div class="aldea-mini-grid" id="gridMiniEdificio2">
+                                        <!-- Chips de salones 2201 a 2405 -->
+                                    </div>
+                                </div>
+
+                                <div class="building-subgroup" style="margin-top: 14px;">
+                                    <div class="building-header-mini">
+                                        <div class="bh-title">
+                                            <i class="ph-bold ph-tree" style="color:var(--tecmilenio-green);"></i>
+                                            <strong>Aldea</strong>
+                                        </div>
+                                        <button class="btn-link-sm" onclick="switchTab('aldea')">Ver todos</button>
+                                    </div>
+                                    <div class="aldea-mini-grid" id="gridMiniAldea">
+                                        <!-- Chips de salones 2101 a 2113 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 2. VISTA AGENDA Y CALENDARIO -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-agenda">
+                    <div class="section-toolbar">
+                        <div class="toolbar-filters">
+                            <div class="filter-group">
+                                <label for="filterFecha"><i class="ph-bold ph-calendar"></i> Fecha:</label>
+                                <input type="date" id="filterFecha" class="form-control">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filterTipoEspacio"><i class="ph-bold ph-funnel"></i> Ubicación /
+                                    Tipo:</label>
+                                <select id="filterTipoEspacio" class="form-control">
+                                    <option value="">Todos los espacios</option>
+                                    <option value="Edificio1">Edificio 1 (Preparatoria)</option>
+                                    <option value="Edificio2">Edificio 2 (Profesional)</option>
+                                    <option value="Aldea">Aldea</option>
+                                    <option value="Laboratorio">Laboratorios</option>
+                                    <option value="Cancha">Canchas Deportivas</option>
+                                    <option value="Otro">Otros</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filterEstado"><i class="ph-bold ph-tag"></i> Estado:</label>
+                                <select id="filterEstado" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="Activa">Activa</option>
+                                    <option value="Completada">Completada</option>
+                                    <option value="Cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            <button class="btn-secondary" id="btnClearFilters">
+                                <i class="ph-bold ph-x"></i> Limpiar
+                            </button>
+                        </div>
+
+                        <div class="toolbar-actions">
+                            <button class="btn-secondary" id="btnExportarCsv"
+                                title="Descargar reporte en formato Excel CSV">
+                                <i class="ph-bold ph-microsoft-excel-logo"></i> Exportar a Excel
+                            </button>
+                            <button class="btn-primary"
+                                onclick="document.getElementById('btnOpenModalReserva').click()">
+                                <i class="ph-bold ph-plus"></i> Agendar Evento
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SELECTOR DE MODO DE VISUALIZACIÓN -->
+                    <div class="view-mode-bar">
+                        <div class="mode-toggle-group">
+                            <button class="mode-btn active" id="btnModeTable" onclick="setAgendaMode('table')">
+                                <i class="ph-bold ph-table"></i> Vista Tabla
+                            </button>
+                            <button class="mode-btn" id="btnModeTimeline" onclick="setAgendaMode('timeline')">
+                                <i class="ph-bold ph-squares-four"></i> Horarios Visuales (Timeline)
+                            </button>
+                        </div>
+                        <div class="timeline-day-nav" id="timelineDayNav" style="display: none;">
+                            <button class="btn-icon" id="btnPrevDay" title="Día anterior"><i
+                                    class="ph-bold ph-caret-left"></i></button>
+                            <span class="timeline-active-day" id="lblTimelineActiveDay">Hoy</span>
+                            <button class="btn-icon" id="btnNextDay" title="Día siguiente"><i
+                                    class="ph-bold ph-caret-right"></i></button>
+                            <button class="btn-secondary" id="btnToday" style="padding:4px 10px;font-size:0.8rem;"
+                                onclick="irAHoy()">Hoy</button>
+                        </div>
+                    </div>
+
+                    <!-- 1. CONTENEDOR MODO TABLA -->
+                    <div class="panel-box" id="containerTableMode">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="ph-bold ph-list-dashes"></i>
+                                <h3>Registro General de Reservas</h3>
+                            </div>
+                            <div class="record-count">
+                                <span id="lblTotalRegistros">0 registros encontrados</span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="custom-table" id="tableAgendaCompleta">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Horario</th>
+                                        <th>Espacio</th>
+                                        <th>Edificio / Área</th>
+                                        <th>Evento / Motivo</th>
+                                        <th>Responsable</th>
+                                        <th>Observaciones</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyAgendaCompleta">
+                                    <!-- Inyección de reservas -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2. CONTENEDOR MODO CUADRÍCULA VISUAL (TIMELINE) -->
+                    <div class="panel-box" id="containerTimelineMode" style="display: none;">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="ph-bold ph-clock"></i>
+                                <h3>Ocupación por Bloques Horarios (07:00 a 21:00)</h3>
+                            </div>
+                            <div class="timeline-legend">
+                                <span class="legend-item"><span class="legend-box is-free"></span> Libre (clic para
+                                    reservar)</span>
+                                <span class="legend-item"><span class="legend-box is-busy"></span> Ocupado</span>
+                            </div>
+                        </div>
+
+                        <div class="timeline-grid-wrapper" id="timelineGridWrapper">
+                            <!-- Cuadrícula dinámica renderizada por JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 3. VISTA DEDICADA EDIFICIO 1 (PREPARATORIA) -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-edificio1">
+                    <div class="showcase-banner banner-edif1">
+                        <div class="showcase-header">
+                            <div class="showcase-badge badge-green">
+                                <i class="ph-bold ph-graduation-cap"></i> Edificio 1 (Preparatoria)
+                            </div>
+                            <h2>Edificio 1 (Preparatoria) — Salones disponibles</h2>
+                            <p>
+                                Salones de clases asignados a Preparatoria: <strong>1102 hasta 1310</strong>.
+                                Consulta disponibilidad por fecha o aparta un salón con un clic.
+                            </p>
+                        </div>
+
+                        <div class="showcase-actions-bar">
+                            <div class="quick-date-filter">
+                                <label for="edificio1DateSelector"><i class="ph-bold ph-calendar"></i> Fecha:</label>
+                                <input type="date" id="edificio1DateSelector" class="form-control">
+                            </div>
+                            <button class="btn-primary" onclick="openModalReservaConEdificio('Edificio1')">
+                                <i class="ph-bold ph-calendar-plus"></i> Agendar en Edificio 1
+                            </button>
+                        </div>
+
+                        <div class="espacios-grid" id="gridEdificio1Dedicada">
+                            <!-- Tarjetas de salones del Edificio 1 -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 4. VISTA DEDICADA EDIFICIO 2 (PROFESIONAL) -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-edificio2">
+                    <div class="showcase-banner banner-edif2">
+                        <div class="showcase-header">
+                            <div class="showcase-badge badge-green">
+                                <i class="ph-bold ph-briefcase"></i> Edificio 2 (Profesional)
+                            </div>
+                            <h2>Edificio 2 (Profesional) — Salones disponibles</h2>
+                            <p>
+                                Salones de clases asignados a Profesional: <strong>2201 hasta 2405</strong>.
+                                Consulta disponibilidad por fecha o aparta un salón con un clic.
+                            </p>
+                        </div>
+
+                        <div class="showcase-actions-bar">
+                            <div class="quick-date-filter">
+                                <label for="edificio2DateSelector"><i class="ph-bold ph-calendar"></i> Fecha:</label>
+                                <input type="date" id="edificio2DateSelector" class="form-control">
+                            </div>
+                            <button class="btn-primary" onclick="openModalReservaConEdificio('Edificio2')">
+                                <i class="ph-bold ph-calendar-plus"></i> Agendar en Edificio 2
+                            </button>
+                        </div>
+
+                        <div class="espacios-grid" id="gridEdificio2Dedicada">
+                            <!-- Tarjetas de salones del Edificio 2 -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 5. VISTA DEDICADA ALDEA -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-aldea">
+                    <div class="showcase-banner banner-aldea">
+                        <div class="showcase-header">
+                            <div class="showcase-badge badge-green">
+                                <i class="ph-bold ph-tree"></i> Aldea
+                            </div>
+                            <h2>Aldea — Salones disponibles</h2>
+                            <p>
+                                Salones asignados al complejo Aldea: <strong>2101 hasta 2113</strong>.
+                                Consulta disponibilidad por fecha o aparta un salón con un clic.
+                            </p>
+                        </div>
+
+                        <div class="showcase-actions-bar">
+                            <div class="quick-date-filter">
+                                <label for="aldeaDateSelector"><i class="ph-bold ph-calendar"></i> Fecha:</label>
+                                <input type="date" id="aldeaDateSelector" class="form-control">
+                            </div>
+                            <button class="btn-primary" onclick="openModalReservaConEdificio('Aldea')">
+                                <i class="ph-bold ph-calendar-plus"></i> Agendar en Aldea
+                            </button>
+                        </div>
+
+                        <div class="espacios-grid" id="gridAldeaDedicada">
+                            <!-- Tarjetas de salones de la Aldea -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 5. VISTA CATÁLOGO DE TODOS LOS ESPACIOS -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-espacios">
+                    <div class="section-toolbar">
+                        <div class="tab-pills">
+                            <button class="pill-btn active" data-espacio-filter="all">Todos los Espacios</button>
+                            <button class="pill-btn" data-espacio-filter="Edificio1">🏫 Edificio 1 (Prepa)</button>
+                            <button class="pill-btn" data-espacio-filter="Edificio2">🏢 Edificio 2 (Prof)</button>
+                            <button class="pill-btn" data-espacio-filter="Aldea">🌿 Aldea</button>
+                            <button class="pill-btn" data-espacio-filter="Laboratorio">🧪 Laboratorios</button>
+                            <button class="pill-btn" data-espacio-filter="Cancha">⚽ Canchas</button>
+                            <button class="pill-btn" data-espacio-filter="Otro">🌅 Otros</button>
+                        </div>
+
+                        <button class="btn-primary" onclick="document.getElementById('btnOpenModalEspacio').click()">
+                            <i class="ph-bold ph-plus"></i> Agregar Nuevo Espacio
+                        </button>
+                    </div>
+
+                    <div class="espacios-grid" id="gridEspacios">
+                        <!-- Tarjetas de todos los espacios dinámicas -->
+                    </div>
+                </section>
+
+                <!-- ================================================================ -->
+                <!-- 6. VISTA USUARIOS -->
+                <!-- ================================================================ -->
+                <section class="tab-view" id="view-usuarios">
+                    <div class="section-toolbar">
+                        <div class="panel-title">
+                            <i class="ph-bold ph-users-three"></i>
+                            <h3>Directorio de Profesores y Responsables</h3>
+                        </div>
+                        <button class="btn-primary" id="btnOpenModalUsuario">
+                            <i class="ph-bold ph-user-plus"></i> Nuevo Usuario
+                        </button>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="table-responsive">
+                            <table class="custom-table" id="tableUsuarios">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Correo Institucional</th>
+                                        <th>Rol</th>
+                                        <th>Acciones Rápidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyUsuarios">
+                                    <!-- Inyección de usuarios -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODAL: AGENDAR NUEVA RESERVA -->
+    <!-- ================================================================ -->
+    <div class="modal-backdrop" id="modalReserva">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="ph-bold ph-calendar-plus" id="modalReservaIcon"></i>
+                    <h3 id="modalReservaTitle">Agendar Nuevo Espacio</h3>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('modalReserva')">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <form id="formReserva" class="modal-body">
+                <input type="hidden" id="reservaEditId" value="">
+
+                <!-- Banner de alerta de conflicto en tiempo real -->
+                <div class="conflict-alert" id="conflictAlertBox" style="display: none;">
+                    <i class="ph-bold ph-warning-circle"></i>
+                    <div class="conflict-content">
+                        <strong id="conflictTitle">Conflicto de Horario Detectado</strong>
+                        <p id="conflictDesc">El espacio seleccionado ya está ocupado en ese horario.</p>
+                    </div>
+                </div>
+
+                <!-- Aviso institucional de autorización -->
+                <div class="auth-notice-box" style="margin-bottom: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.82rem; color: #14532d; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph-bold ph-shield-check" style="font-size: 1.2rem; color: var(--tecmilenio-green); flex-shrink: 0;"></i>
+                    <span><strong>Regla institucional:</strong> La reserva debe ser registrada por un <strong>Responsable o Colaborador</strong>. Los profesores no pueden agendar directamente por su cuenta, pero pueden ser asignados a la clase.</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="reservaUsuario"><i class="ph-bold ph-user-check"></i> Responsable / Colaborador *</label>
+                        <select id="reservaUsuario" class="form-control" required>
+                            <option value="">Selecciona al Responsable/Colaborador...</option>
+                        </select>
+                        <small class="form-hint">Autorizador de la reserva</small>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="reservaProfesor"><i class="ph-bold ph-chalkboard-teacher"></i> Profesor Asignado (Opcional)</label>
+                        <select id="reservaProfesor" class="form-control">
+                            <option value="">(Opcional) Selecciona al profesor de la clase...</option>
+                        </select>
+                        <small class="form-hint">Docente que imparte la sesión</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-8">
+                        <label for="reservaEspacio"><i class="ph-bold ph-door"></i> Espacio a Reservar *</label>
+                        <select id="reservaEspacio" class="form-control" required>
+                            <option value="">Selecciona un espacio...</option>
+                        </select>
+                        <small class="form-hint" id="espacioHint"></small>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="reservaCapacidad"><i class="ph-bold ph-users"></i> Capacidad *</label>
+                        <input type="number" id="reservaCapacidad" class="form-control" placeholder="Ej. 30" min="1"
+                            required>
+                        <small class="form-hint">Personas esperadas</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-4">
+                        <label for="reservaFecha"><i class="ph-bold ph-calendar"></i> Fecha *</label>
+                        <input type="date" id="reservaFecha" class="form-control" required>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="reservaHoraInicio"><i class="ph-bold ph-clock"></i> Hora Inicio *</label>
+                        <input type="time" id="reservaHoraInicio" class="form-control" required>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="reservaHoraFin"><i class="ph-bold ph-clock"></i> Hora Fin *</label>
+                        <input type="time" id="reservaHoraFin" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="reservaMotivo"><i class="ph-bold ph-bookmark"></i> Nombre del Evento o Clase
+                            *</label>
+                        <input type="text" id="reservaMotivo" class="form-control"
+                            placeholder="Ej. Conferencia, Clase Muestra, Sesión de Proyecto..." required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="reservaServicioMedico" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-weight: 500; transition: all 0.2s ease;">
+                            <input type="checkbox" id="reservaServicioMedico" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #e11d48;">
+                            <span>
+                                <i class="ph-bold ph-first-aid" style="color: #e11d48; font-size: 1.2rem; vertical-align: middle;"></i>
+                                <strong style="color: #9f1239;">¿Requiere Servicio Médico?</strong> 
+                                <span style="color: #64748b; font-size: 0.85rem; font-weight: 400; margin-left: 4px;">(Marcar casilla si el evento requiere asistencia médica en sitio)</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="reservaObs"><i class="ph-bold ph-chat-text"></i> Observaciones (Opcional)</label>
+                        <textarea id="reservaObs" class="form-control" rows="2"
+                            placeholder="Ej. Acomodo para 30 personas, proyector encendido, etc."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-row" id="rowReservaEstado" style="display: none;">
+                    <div class="form-group col-12">
+                        <label for="reservaEstado"><i class="ph-bold ph-tag"></i> Estado de la Reserva</label>
+                        <select id="reservaEstado" class="form-control">
+                            <option value="Activa">Activa</option>
+                            <option value="Completada">Completada</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modalReserva')">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnSubmitReserva">
+                        <i class="ph-bold ph-check"></i> Confirmar y Agendar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODAL: CREAR / EDITAR ESPACIO -->
+    <!-- ================================================================ -->
+    <div class="modal-backdrop" id="modalEspacio">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="ph-bold ph-door"></i>
+                    <h3 id="modalEspacioTitle">Nuevo Espacio Universitario</h3>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('modalEspacio')">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <form id="formEspacio" class="modal-body">
+                <input type="hidden" id="espacioEditId" value="">
+
+                <div class="form-group">
+                    <label for="espacioNombre"><i class="ph-bold ph-tag"></i> Nombre o Número del Salón *</label>
+                    <input type="text" id="espacioNombre" class="form-control"
+                        placeholder="Ej. 1103, 2101, Terraza, Cancha Polivalente..." required>
+                    <small class="form-hint">Tip: Los salones que inicien en 1 son de Preparatoria (Edificio 1); los 22xx-24xx son de Profesional (Edificio 2); los 21xx pertenecen a la Aldea.</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="espacioTipo"><i class="ph-bold ph-buildings"></i> Ubicación / Edificio *</label>
+                        <select id="espacioTipo" class="form-control" required>
+                            <option value="Edificio1">Edificio 1 (Preparatoria)</option>
+                            <option value="Edificio2">Edificio 2 (Profesional)</option>
+                            <option value="Aldea">Aldea</option>
+                            <option value="Laboratorio">Laboratorio</option>
+                            <option value="Cancha">Cancha Deportiva</option>
+                            <option value="Otro">Otros (Terraza, SUM, Centro Estudiantil)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="espacioCapacidad"><i class="ph-bold ph-users"></i> Capacidad Máxima *</label>
+                        <input type="number" id="espacioCapacidad" class="form-control" placeholder="Ej. 30" min="1"
+                            required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="espacioActivo" checked>
+                        <span class="checkmark"></span>
+                        Espacio activo y disponible para agendar
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modalEspacio')">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="ph-bold ph-floppy-disk"></i> Guardar Espacio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODAL: REGISTRAR PROFESOR O RESPONSABLE -->
+    <!-- ================================================================ -->
+    <div class="modal-backdrop" id="modalUsuario">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="ph-bold ph-user-plus"></i>
+                    <h3>Registrar Profesor o Responsable</h3>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('modalUsuario')">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <form id="formUsuario" class="modal-body">
+                <div class="form-group">
+                    <label for="usuarioNombre"><i class="ph-bold ph-user"></i> Nombre Completo *</label>
+                    <input type="text" id="usuarioNombre" class="form-control"
+                        placeholder="Ej. Mtro. Juan Pérez González" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-7">
+                        <label for="usuarioCorreo"><i class="ph-bold ph-envelope"></i> Correo Electrónico *</label>
+                        <input type="email" id="usuarioCorreo" class="form-control" placeholder="ejemplo@tecmilenio.mx"
+                            required>
+                    </div>
+                    <div class="form-group col-5">
+                        <label for="usuarioRol"><i class="ph-bold ph-identification-badge"></i> Rol *</label>
+                        <select id="usuarioRol" class="form-control" required>
+                            <option value="Profesor">Profesor</option>
+                            <option value="Responsable">Responsable</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="ph-bold ph-check"></i> Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST DE NOTIFICACIONES -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+# Compilados de Java
+bin/
+backend/bin/
+*.class
+
+# IDE y archivos locales
+.vscode/
+.idea/
+*.iml
+*.log
+appespacios
