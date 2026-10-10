@@ -260,7 +260,19 @@ function renderDashboard() {
                         <div>${escapeHtml(r.nombreUsuario || 'Responsable')}</div>
                         <small style="color:var(--text-muted)">${escapeHtml(r.rolUsuario || 'Colaborador')}</small>
                     </td>
-                    <td><span class="badge-status ${r.estadoReserva.toLowerCase()}">${r.estadoReserva}</span></td>
+                    <td>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                            <span class="badge-status ${r.estadoReserva.toLowerCase()}">${r.estadoReserva}</span>
+                            <div style="display:flex;gap:3px;">
+                                <button class="btn-icon" style="color:#1d4ed8;background:#eff6ff;width:26px;height:26px;font-size:0.85rem;" title="Descargar Reporte Word (.doc con Logo)" onclick="descargarReporteWord(${r.idReserva})">
+                                    <i class="ph-bold ph-file-doc"></i>
+                                </button>
+                                <button class="btn-icon" style="color:#15803d;background:#f0fdf4;width:26px;height:26px;font-size:0.85rem;" title="Descargar Ficha Excel (.csv)" onclick="descargarReporteExcelIndividual(${r.idReserva})">
+                                    <i class="ph-bold ph-microsoft-excel-logo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -407,19 +419,25 @@ function renderAgenda() {
             <td><small>${escapeHtml(r.observaciones || '-')}</small></td>
             <td><span class="badge-status ${r.estadoReserva.toLowerCase()}">${r.estadoReserva}</span></td>
             <td>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" style="color:var(--tecmilenio-green);width:32px;height:32px;" title="Editar Reserva" onclick="abrirEditarReserva(${r.idReserva})">
+                <div style="display:flex;gap:5px;align-items:center;">
+                    <button class="btn-icon" style="color:#1d4ed8;background:#eff6ff;width:30px;height:30px;" title="Descargar Reporte Individual en Word (.doc con Logo)" onclick="descargarReporteWord(${r.idReserva})">
+                        <i class="ph-bold ph-file-doc"></i>
+                    </button>
+                    <button class="btn-icon" style="color:#15803d;background:#f0fdf4;width:30px;height:30px;" title="Descargar Ficha Individual en Excel (.csv)" onclick="descargarReporteExcelIndividual(${r.idReserva})">
+                        <i class="ph-bold ph-microsoft-excel-logo"></i>
+                    </button>
+                    <button class="btn-icon" style="color:var(--tecmilenio-green);width:30px;height:30px;" title="Editar Reserva" onclick="abrirEditarReserva(${r.idReserva})">
                         <i class="ph-bold ph-pencil-simple"></i>
                     </button>
                     ${r.estadoReserva === 'Activa' ? `
-                        <button class="btn-icon" style="color:#005934;width:32px;height:32px;" title="Marcar como Completada" onclick="cambiarEstadoReserva(${r.idReserva}, 'Completada')">
+                        <button class="btn-icon" style="color:#005934;width:30px;height:30px;" title="Marcar como Completada" onclick="cambiarEstadoReserva(${r.idReserva}, 'Completada')">
                             <i class="ph-bold ph-check"></i>
                         </button>
-                        <button class="btn-icon" style="color:var(--danger);width:32px;height:32px;" title="Cancelar Reserva" onclick="cambiarEstadoReserva(${r.idReserva}, 'Cancelada')">
+                        <button class="btn-icon" style="color:var(--danger);width:30px;height:30px;" title="Cancelar Reserva" onclick="cambiarEstadoReserva(${r.idReserva}, 'Cancelada')">
                             <i class="ph-bold ph-x"></i>
                         </button>
                     ` : ''}
-                    <button class="btn-icon" style="color:var(--text-muted);width:32px;height:32px;" title="Eliminar del Registro" onclick="eliminarReserva(${r.idReserva})">
+                    <button class="btn-icon" style="color:var(--text-muted);width:30px;height:30px;" title="Eliminar del Registro" onclick="eliminarReserva(${r.idReserva})">
                         <i class="ph-bold ph-trash"></i>
                     </button>
                 </div>
@@ -1182,6 +1200,7 @@ async function handleReservaSubmit() {
     }
 
     try {
+        let savedId = null;
         if (state.backendConnected) {
             const url = editId ? `${API_BASE}/reservas/${editId}` : `${API_BASE}/reservas`;
             const method = editId ? 'PUT' : 'POST';
@@ -1198,16 +1217,19 @@ async function handleReservaSubmit() {
             }
 
             const data = await res.json();
+            savedId = data.idReserva || (editId ? parseInt(editId) : null);
             showToast(editId ? '¡Reserva actualizada correctamente!' : '¡Reserva confirmada con éxito!', 'success');
         } else {
             // Modo local fallback
             if (editId) {
-                const idx = state.reservas.findIndex(r => r.idReserva === parseInt(editId));
+                savedId = parseInt(editId);
+                const idx = state.reservas.findIndex(r => r.idReserva === savedId);
                 if (idx !== -1) {
                     state.reservas[idx] = { ...state.reservas[idx], ...payload };
                 }
             } else {
                 const newId = state.reservas.length ? Math.max(...state.reservas.map(r => r.idReserva)) + 1 : 1;
+                savedId = newId;
                 const esp = state.espacios.find(e => e.idEspacio === payload.idEspacio);
                 const usu = state.usuarios.find(u => u.idUsuario === payload.idUsuario);
                 state.reservas.unshift({
@@ -1224,6 +1246,10 @@ async function handleReservaSubmit() {
 
         closeModal('modalReserva');
         await loadAllData();
+
+        if (savedId) {
+            mostrarModalExitoReserva(savedId);
+        }
     } catch (err) {
         showToast(err.message, 'error');
     }
@@ -1661,6 +1687,380 @@ function exportarReservasCsv() {
     link.click();
     document.body.removeChild(link);
     showToast('¡Archivo Excel/CSV descargado exitosamente!', 'success');
+}
+
+// ====================================================================
+// REPORTES INDIVIDUALES (WORD .DOC CON LOGO Y EXCEL .CSV)
+// ====================================================================
+
+function mostrarModalExitoReserva(idReserva) {
+    const r = state.reservas.find(x => x.idReserva === idReserva);
+    if (!r) return;
+
+    const folio = `TM-CUAU-${String(r.idReserva).padStart(4, '0')}`;
+    const elFolio = document.getElementById('exitoFolio');
+    if (elFolio) elFolio.textContent = folio;
+
+    const elEvento = document.getElementById('exitoEvento');
+    if (elEvento) elEvento.textContent = r.motivoEvento;
+
+    const elEspacio = document.getElementById('exitoEspacio');
+    if (elEspacio) elEspacio.textContent = r.nombreEspacio;
+
+    const elHorario = document.getElementById('exitoHorario');
+    if (elHorario) elHorario.textContent = `${formatFecha(r.fechaReserva)} (${r.horaInicio} - ${r.horaFin})`;
+
+    const elMed = document.getElementById('exitoServicioMedico');
+    if (elMed) {
+        elMed.textContent = r.servicioMedico ? '🚨 SÍ REQUERIDO' : 'No requerido';
+        elMed.style.color = r.servicioMedico ? '#dc2626' : '#64748b';
+    }
+
+    const btnWord = document.getElementById('btnDescargarWordModal');
+    if (btnWord) btnWord.onclick = () => descargarReporteWord(r.idReserva);
+
+    const btnExcel = document.getElementById('btnDescargarExcelModal');
+    if (btnExcel) btnExcel.onclick = () => descargarReporteExcelIndividual(r.idReserva);
+
+    openModal('modalExitoReserva');
+}
+
+function descargarReporteWord(idReserva) {
+    const r = state.reservas.find(x => x.idReserva === idReserva);
+    if (!r) {
+        showToast('Reserva no encontrada para generar reporte', 'error');
+        return;
+    }
+
+    const esp = state.espacios.find(e => e.idEspacio === r.idEspacio);
+    const ubicacion = esp ? getEspacioEdificioLabel(esp) : (r.edificioEspacio || r.tipoEspacio || 'General');
+    const folio = `TM-CUAU-${String(r.idReserva).padStart(4, '0')}`;
+    const fechaLarga = formatFecha(r.fechaReserva);
+
+    const profMatch = (r.observaciones || '').match(/Profesor:\s*([^|;\n]+)/i);
+    const docente = profMatch ? profMatch[1].trim() : (r.rolUsuario === 'Profesor' ? r.nombreUsuario : 'No asignado');
+
+    const logoHtml = (typeof LOGO_TECMILENIO_BASE64 !== 'undefined' && LOGO_TECMILENIO_BASE64)
+        ? `<img src="${LOGO_TECMILENIO_BASE64}" width="220" style="max-height:65px;object-fit:contain;" alt="Tecmilenio Logo" />`
+        : `<h2 style="color:#005934;margin:0;font-size:20pt;letter-spacing:1px;font-family:Arial,sans-serif;">TECMILENIO</h2>`;
+
+    const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Comprobante de Reserva ${folio}</title>
+        <!--[if gte mso 9]>
+        <xml>
+            <w:WordDocument>
+                <w:View>Print</w:View>
+                <w:Zoom>100</w:Zoom>
+                <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+            @page {
+                size: letter portrait;
+                margin: 2cm 2cm 2cm 2cm;
+                mso-page-orientation: portrait;
+            }
+            body {
+                font-family: 'Calibri', 'Arial', sans-serif;
+                color: #1e293b;
+                line-height: 1.4;
+                font-size: 11pt;
+            }
+            .header-table {
+                width: 100%;
+                border-bottom: 3px solid #005934;
+                padding-bottom: 12px;
+                margin-bottom: 20px;
+            }
+            .title-box {
+                text-align: right;
+            }
+            .title-main {
+                color: #005934;
+                font-size: 15pt;
+                font-weight: bold;
+                margin: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .title-sub {
+                color: #475569;
+                font-size: 10pt;
+                margin: 3px 0 0 0;
+                font-weight: 600;
+            }
+            .folio-badge {
+                display: inline-block;
+                background-color: #f0fdf4;
+                border: 1px solid #86efac;
+                color: #166534;
+                padding: 4px 10px;
+                font-weight: bold;
+                font-size: 10.5pt;
+                margin-top: 5px;
+            }
+            .section-title {
+                background-color: #005934;
+                color: #ffffff;
+                font-size: 11pt;
+                font-weight: bold;
+                padding: 6px 10px;
+                margin-top: 18px;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            table.data-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 12px;
+            }
+            table.data-table th, table.data-table td {
+                border: 1px solid #cbd5e1;
+                padding: 8px 10px;
+                text-align: left;
+                vertical-align: middle;
+                font-size: 10.5pt;
+            }
+            table.data-table th {
+                background-color: #f8fafc;
+                color: #334155;
+                font-weight: bold;
+                width: 28%;
+            }
+            .badge-urgent {
+                background-color: #fee2e2;
+                color: #991b1b;
+                font-weight: bold;
+                padding: 3px 8px;
+                border: 1px solid #f87171;
+            }
+            .badge-normal {
+                background-color: #f1f5f9;
+                color: #475569;
+                padding: 3px 8px;
+            }
+            .signatures-table {
+                width: 100%;
+                margin-top: 40px;
+                border-collapse: collapse;
+            }
+            .signatures-table td {
+                width: 33.33%;
+                text-align: center;
+                vertical-align: top;
+                padding: 0 10px;
+            }
+            .sig-line {
+                border-top: 1px solid #334155;
+                padding-top: 6px;
+                font-weight: bold;
+                font-size: 9.5pt;
+                color: #1e293b;
+            }
+            .sig-sub {
+                font-size: 8.5pt;
+                color: #64748b;
+            }
+            .footer-legal {
+                margin-top: 30px;
+                border-top: 1px solid #e2e8f0;
+                padding-top: 8px;
+                font-size: 8pt;
+                color: #94a3b8;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <table class="header-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="vertical-align:middle;">
+                    ${logoHtml}
+                </td>
+                <td class="title-box" style="vertical-align:middle;">
+                    <div class="title-main">Universidad Tecmilenio</div>
+                    <div class="title-sub">Campus Cuautitlán • Control de Espacios</div>
+                    <div class="folio-badge">FOLIO: ${folio}</div>
+                </td>
+            </tr>
+        </table>
+
+        <div style="text-align:center;margin-bottom:15px;">
+            <h3 style="margin:0;font-size:13pt;color:#0f172a;text-transform:uppercase;">Comprobante Oficial de Reserva de Espacio</h3>
+            <span style="font-size:9pt;color:#64748b;">Fecha de emisión: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+
+        <div class="section-title">1. Datos Generales del Evento o Clase</div>
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <th>Nombre del Evento:</th>
+                <td><strong style="color:#005934;font-size:11.5pt;">${escapeHtml(r.motivoEvento)}</strong></td>
+            </tr>
+            <tr>
+                <th>Fecha Programada:</th>
+                <td><strong>${fechaLarga}</strong> (${r.fechaReserva})</td>
+            </tr>
+            <tr>
+                <th>Horario Reservado:</th>
+                <td><strong>${r.horaInicio} hrs a ${r.horaFin} hrs</strong></td>
+            </tr>
+            <tr>
+                <th>Estado de la Reserva:</th>
+                <td><strong>${r.estadoReserva}</strong></td>
+            </tr>
+        </table>
+
+        <div class="section-title">2. Espacio e Instalación Asignada</div>
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <th>Salón / Espacio:</th>
+                <td><strong style="font-size:11pt;color:#005934;">${escapeHtml(r.nombreEspacio)}</strong></td>
+            </tr>
+            <tr>
+                <th>Edificio / Ubicación:</th>
+                <td>${escapeHtml(ubicacion)}</td>
+            </tr>
+            <tr>
+                <th>Tipo de Espacio:</th>
+                <td>${escapeHtml(r.tipoEspacio || 'General')}</td>
+            </tr>
+            <tr>
+                <th>Capacidad Asignada:</th>
+                <td>${r.capacidadRequerida || (esp ? esp.capacidad : 30)} personas aprox.</td>
+            </tr>
+        </table>
+
+        <div class="section-title">3. Requerimientos Especiales y Servicio Médico</div>
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <th>Servicio Médico:</th>
+                <td>
+                    ${r.servicioMedico 
+                        ? `<span class="badge-urgent">🚨 SÍ REQUERIDO (Se notifica a Enfermería y Paramédico de Campus)</span>` 
+                        : `<span class="badge-normal">No requerido para este evento</span>`}
+                </td>
+            </tr>
+            <tr>
+                <th>Observaciones / Acomodo:</th>
+                <td>${escapeHtml(r.observaciones || 'Sin especificaciones extraordinarias.')}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">4. Responsable de la Solicitud</div>
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <th>Solicitado por:</th>
+                <td><strong>${escapeHtml(r.nombreUsuario || 'Responsable')}</strong></td>
+            </tr>
+            <tr>
+                <th>Rol Institucional:</th>
+                <td>${escapeHtml(r.rolUsuario || 'Colaborador')}</td>
+            </tr>
+            <tr>
+                <th>Correo Electrónico:</th>
+                <td>${escapeHtml(r.correoUsuario || 'N/A')}</td>
+            </tr>
+            <tr>
+                <th>Docente Asignado:</th>
+                <td>${escapeHtml(docente)}</td>
+            </tr>
+        </table>
+
+        <br/>
+        <table class="signatures-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <div style="height:50px;"></div>
+                    <div class="sig-line">${escapeHtml(r.nombreUsuario || 'Responsable')}</div>
+                    <div class="sig-sub">Solicitante Autorizado</div>
+                </td>
+                <td>
+                    <div style="height:50px;"></div>
+                    <div class="sig-line">Gestión de Espacios</div>
+                    <div class="sig-sub">Campus Cuautitlán</div>
+                </td>
+                <td>
+                    <div style="height:50px;"></div>
+                    <div class="sig-line">Servicios Generales</div>
+                    <div class="sig-sub">Apertura y Seguridad</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="footer-legal">
+            Documento emitido por la Plataforma de Control de Espacios de Universidad Tecmilenio Campus Cuautitlán.<br/>
+            Este comprobante ampara el uso exclusivo del espacio universitario en el día y horario señalado.
+        </div>
+    </body>
+    </html>
+    `;
+
+    const blob = new Blob(['\uFEFF' + html], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Reserva_${folio}_${r.fechaReserva}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`¡Reporte Word generado exitosamente: ${folio}!`, 'success');
+}
+
+function descargarReporteExcelIndividual(idReserva) {
+    const r = state.reservas.find(x => x.idReserva === idReserva);
+    if (!r) {
+        showToast('Reserva no encontrada para generar reporte', 'error');
+        return;
+    }
+
+    const esp = state.espacios.find(e => e.idEspacio === r.idEspacio);
+    const ubicacion = esp ? getEspacioEdificioLabel(esp) : (r.edificioEspacio || r.tipoEspacio || 'General');
+    const folio = `TM-CUAU-${String(r.idReserva).padStart(4, '0')}`;
+
+    const headers = [
+        'CAMPO',
+        'DETALLE DE LA RESERVA'
+    ];
+
+    const data = [
+        ['Folio Oficial', folio],
+        ['Nombre del Evento / Clase', r.motivoEvento],
+        ['Fecha de Reserva', r.fechaReserva],
+        ['Hora Inicio', r.horaInicio],
+        ['Hora Fin', r.horaFin],
+        ['Salón / Espacio', r.nombreEspacio],
+        ['Edificio / Área', ubicacion],
+        ['Tipo de Espacio', r.tipoEspacio || 'General'],
+        ['Capacidad Estimada', r.capacidadRequerida || (esp ? esp.capacidad : 30)],
+        ['Estado de la Reserva', r.estadoReserva],
+        ['Servicio Médico Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
+        ['Responsable Solicitante', r.nombreUsuario || 'Responsable'],
+        ['Rol del Solicitante', r.rolUsuario || 'Colaborador'],
+        ['Correo Institucional', r.correoUsuario || 'N/A'],
+        ['Observaciones y Montaje', r.observaciones || 'Sin especificaciones'],
+        ['Fecha de Generación del Reporte', new Date().toISOString()]
+    ];
+
+    const csvContent = '\uFEFF' + [
+        'FICHA TÉCNICA INDIVIDUAL DE RESERVA - UNIVERSIDAD TECMILENIO CAMPUS CUAUTITLÁN',
+        headers.join(','),
+        ...data.map(([campo, val]) => `"${String(campo).replace(/"/g, '""')}","${String(val).replace(/"/g, '""')}"`)
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ficha_Reserva_${folio}_${r.fechaReserva}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`¡Ficha Excel generada exitosamente: ${folio}!`, 'success');
 }
 
 function escapeHtml(str) {

@@ -815,9 +815,59 @@
         </div>
     </div>
 
+    <!-- MODAL CONFIRMACIÓN Y DESCARGA DE REPORTE -->
+    <div class="modal-backdrop" id="modalExitoReserva">
+        <div class="modal" style="max-width: 520px; text-align: center; padding: 2rem;">
+            <div style="width: 68px; height: 68px; margin: 0 auto 1.25rem; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #059669; font-size: 2.4rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);">
+                <i class="ph-bold ph-check-circle"></i>
+            </div>
+            <h2 style="font-size: 1.45rem; color: #0f172a; margin-bottom: 0.4rem;" id="modalExitoTitulo">¡Reserva Registrada con Éxito!</h2>
+            <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1.4rem;">
+                El espacio ha quedado reservado en el calendario. Puedes descargar de inmediato el comprobante oficial individual en formato Word o Excel:
+            </p>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #64748b;"><i class="ph-bold ph-hash"></i> Folio Digital:</span>
+                    <strong style="color: #005934; font-family: monospace; font-size: 1.05rem;" id="exitoFolio">#TM-0000</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #64748b;"><i class="ph-bold ph-bookmark"></i> Evento:</span>
+                    <strong id="exitoEvento" style="max-width: 60%; text-align: right;">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #64748b;"><i class="ph-bold ph-door"></i> Espacio:</span>
+                    <strong id="exitoEspacio">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #64748b;"><i class="ph-bold ph-calendar"></i> Fecha y Horario:</span>
+                    <strong id="exitoHorario">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;" id="exitoRowServicioMedico">
+                    <span style="color: #64748b;"><i class="ph-bold ph-first-aid"></i> Servicio Médico:</span>
+                    <strong id="exitoServicioMedico" style="color: #dc2626;">-</strong>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <button type="button" class="btn-primary" id="btnDescargarWordModal" style="width: 100%; justify-content: center; background: #1d4ed8; border-color: #1d4ed8; font-size: 1rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(29, 78, 216, 0.2);">
+                    <i class="ph-bold ph-file-doc"></i> Descargar Reporte en Word (.doc con Logo)
+                </button>
+                <button type="button" class="btn-primary" id="btnDescargarExcelModal" style="width: 100%; justify-content: center; background: #005934; border-color: #005934; font-size: 1rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(0, 89, 52, 0.2);">
+                    <i class="ph-bold ph-microsoft-excel-logo"></i> Descargar Ficha en Excel (.csv)
+                </button>
+            </div>
+            
+            <button type="button" class="btn-secondary" style="width: 100%; justify-content: center;" onclick="closeModal('modalExitoReserva')">
+                <i class="ph-bold ph-arrow-left"></i> Continuar al Calendario
+            </button>
+        </div>
+    </div>
+
     <!-- TOAST DE NOTIFICACIONES -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="js/logo_data.js"></script>
     <script src="js/app.js"></script>
 </body>
 
