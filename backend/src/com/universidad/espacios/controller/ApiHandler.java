@@ -220,6 +220,7 @@ public class ApiHandler implements HttpHandler {
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
         boolean servicioTI = getJsonBool(body, "servicioTI");
+        boolean servicioPlantaFisica = getJsonBool(body, "servicioPlantaFisica");
         String archivoLayout = getJsonString(body, "archivoLayout");
         String archivoLayoutNombre = getJsonString(body, "archivoLayoutNombre");
 
@@ -234,7 +235,7 @@ public class ApiHandler implements HttpHandler {
         }
 
         Reserva r = dataStore.addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, obs, 
-                                        servicioMedico, servicioTI, archivoLayout, archivoLayoutNombre);
+                                        servicioMedico, servicioTI, servicioPlantaFisica, archivoLayout, archivoLayoutNombre);
         sendJsonResponse(exchange, 201, r.toJson());
     }
 
@@ -251,6 +252,7 @@ public class ApiHandler implements HttpHandler {
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
         boolean servicioTI = getJsonBool(body, "servicioTI");
+        boolean servicioPlantaFisica = getJsonBool(body, "servicioPlantaFisica");
         String archivoLayout = getJsonString(body, "archivoLayout");
         String archivoLayoutNombre = getJsonString(body, "archivoLayoutNombre");
 
@@ -265,7 +267,7 @@ public class ApiHandler implements HttpHandler {
         }
 
         Reserva r = dataStore.updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, obs, 
-                                           servicioMedico, servicioTI, archivoLayout, archivoLayoutNombre);
+                                           servicioMedico, servicioTI, servicioPlantaFisica, archivoLayout, archivoLayoutNombre);
         sendJsonResponse(exchange, 200, r.toJson());
     }
 

@@ -665,8 +665,8 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group col-6">
+                <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label for="reservaServicioMedico" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #f0fdfa; border: 1.5px solid #5eead4; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%; box-shadow: 0 1px 3px rgba(20, 184, 166, 0.08);">
                             <input type="checkbox" id="reservaServicioMedico" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #0d9488; flex-shrink: 0;">
                             <span>
@@ -676,13 +676,23 @@
                             </span>
                         </label>
                     </div>
-                    <div class="form-group col-6">
-                        <label for="reservaServicioTI" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="reservaServicioTI" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);">
                             <input type="checkbox" id="reservaServicioTI" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #2563eb; flex-shrink: 0;">
                             <span>
-                                <i class="ph-bold ph-laptop" style="color: #2563eb; font-size: 1.2rem; vertical-align: middle;"></i>
+                                <i class="ph-bold ph-laptop" style="color: #2563eb; font-size: 1.25rem; vertical-align: middle;"></i>
                                 <strong style="color: #1e40af;">¿Requiere Soporte de TI?</strong> 
-                                <span style="display: block; color: #64748b; font-size: 0.78rem; font-weight: 400; margin-top: 2px;">(Cómputo, audio, proyector o soporte técnico)</span>
+                                <span style="display: block; color: #1e3a8a; font-size: 0.78rem; font-weight: 400; margin-top: 2px;">(Cómputo, audio, proyector o soporte técnico)</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="reservaServicioPlantaFisica" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%; box-shadow: 0 1px 3px rgba(234, 88, 12, 0.08);">
+                            <input type="checkbox" id="reservaServicioPlantaFisica" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #ea580c; flex-shrink: 0;">
+                            <span>
+                                <i class="ph-bold ph-wrench" style="color: #ea580c; font-size: 1.25rem; vertical-align: middle;"></i>
+                                <strong style="color: #c2410c;">¿Requiere Planta Física?</strong> 
+                                <span style="display: block; color: #9a3412; font-size: 0.78rem; font-weight: 400; margin-top: 2px;">(Mobiliario, acomodo, electricidad o apoyo en sitio)</span>
                             </span>
                         </label>
                     </div>
@@ -900,9 +910,13 @@
                     <span style="color: #64748b;"><i class="ph-bold ph-heartbeat"></i> Tecmi Care:</span>
                     <strong id="exitoServicioMedico" style="color: #0d9488;">-</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between;" id="exitoRowServicioTI">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;" id="exitoRowServicioTI">
                     <span style="color: #64748b;"><i class="ph-bold ph-laptop"></i> Soporte de TI:</span>
                     <strong id="exitoServicioTI" style="color: #2563eb;">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;" id="exitoRowServicioPlantaFisica">
+                    <span style="color: #64748b;"><i class="ph-bold ph-wrench"></i> Planta Física:</span>
+                    <strong id="exitoServicioPlantaFisica" style="color: #ea580c;">-</strong>
                 </div>
                 <div style="display: none; justify-content: space-between; margin-top: 8px;" id="exitoRowLayout">
                     <span style="color: #64748b;"><i class="ph-bold ph-file-arrow-up"></i> Layout Adjunto:</span>

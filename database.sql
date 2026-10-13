@@ -64,6 +64,7 @@ CREATE TABLE Reservas (
     estado_reserva ENUM('Activa', 'Cancelada', 'Completada') DEFAULT 'Activa',
     servicio_medico TINYINT(1) DEFAULT 0,
     servicio_ti TINYINT(1) DEFAULT 0,
+    servicio_planta_fisica TINYINT(1) DEFAULT 0,
     observaciones TEXT NULL,
     archivo_layout VARCHAR(500) NULL,
     archivo_layout_nombre VARCHAR(255) NULL,

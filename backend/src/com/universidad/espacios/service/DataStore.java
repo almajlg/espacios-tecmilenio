@@ -169,7 +169,7 @@ public class DataStore {
     public synchronized Reserva addReserva(int idUsuario, int idEspacio, String fecha, 
                                           String horaInicio, String horaFin, 
                                           String motivo, String observaciones, 
-                                          boolean servicioMedico, boolean servicioTI,
+                                          boolean servicioMedico, boolean servicioTI, boolean servicioPlantaFisica,
                                           String archivoLayout, String archivoLayoutNombre) throws Exception {
         Usuario u = usuarios.get(idUsuario);
         if (u == null) throw new IllegalArgumentException("Usuario no encontrado (ID: " + idUsuario + ")");
@@ -200,6 +200,7 @@ public class DataStore {
         Reserva r = new Reserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, "Activa", observaciones);
         r.setServicioMedico(servicioMedico);
         r.setServicioTI(servicioTI);
+        r.setServicioPlantaFisica(servicioPlantaFisica);
         r.setArchivoLayout(archivoLayout);
         r.setArchivoLayoutNombre(archivoLayoutNombre);
         enrichReserva(r);
@@ -212,7 +213,7 @@ public class DataStore {
                                           String horaInicio, String horaFin, 
                                           String motivo, String observaciones, 
                                           boolean servicioMedico, boolean servicioTI) throws Exception {
-        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, servicioMedico, servicioTI, null, null);
+        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, servicioMedico, servicioTI, false, null, null);
     }
 
     public synchronized Reserva addReserva(int idUsuario, int idEspacio, String fecha, 
@@ -221,7 +222,12 @@ public class DataStore {
         boolean ti = observaciones != null && (observaciones.toLowerCase().contains("servicio ti") || 
                                                observaciones.toLowerCase().contains("soporte ti") || 
                                                observaciones.toLowerCase().contains("[ti]"));
-        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, servicioMedico, ti);
+        boolean pf = observaciones != null && (observaciones.toLowerCase().contains("planta física") || 
+                                               observaciones.toLowerCase().contains("planta fisica") || 
+                                               observaciones.toLowerCase().contains("mantenimiento") || 
+                                               observaciones.toLowerCase().contains("mobiliario") ||
+                                               observaciones.toLowerCase().contains("[pf]"));
+        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, servicioMedico, ti, pf, null, null);
     }
 
     public synchronized Reserva addReserva(int idUsuario, int idEspacio, String fecha, 
@@ -234,7 +240,12 @@ public class DataStore {
         boolean ti = observaciones != null && (observaciones.toLowerCase().contains("servicio ti") || 
                                                observaciones.toLowerCase().contains("soporte ti") || 
                                                observaciones.toLowerCase().contains("[ti]"));
-        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, med, ti);
+        boolean pf = observaciones != null && (observaciones.toLowerCase().contains("planta física") || 
+                                               observaciones.toLowerCase().contains("planta fisica") || 
+                                               observaciones.toLowerCase().contains("mantenimiento") || 
+                                               observaciones.toLowerCase().contains("mobiliario") ||
+                                               observaciones.toLowerCase().contains("[pf]"));
+        return addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, observaciones, med, ti, pf, null, null);
     }
 
     public synchronized Reserva updateEstadoReserva(int id, String nuevoEstado) {
@@ -253,16 +264,8 @@ public class DataStore {
         Reserva existing = reservas.get(id);
         boolean med = existing != null ? existing.isServicioMedico() : false;
         boolean ti = existing != null ? existing.isServicioTI() : false;
-        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, med, ti);
-    }
-
-    public synchronized Reserva updateReserva(int id, int idUsuario, int idEspacio, String fecha, 
-                                              String horaInicio, String horaFin, 
-                                              String motivo, String estado, String observaciones,
-                                              boolean servicioMedico) throws Exception {
-        Reserva existing = reservas.get(id);
-        boolean ti = existing != null ? existing.isServicioTI() : false;
-        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, servicioMedico, ti);
+        boolean pf = existing != null ? existing.isServicioPlantaFisica() : false;
+        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, med, ti, pf);
     }
 
     public synchronized Reserva updateReserva(int id, int idUsuario, int idEspacio, String fecha, 
@@ -270,15 +273,26 @@ public class DataStore {
                                               String motivo, String estado, String observaciones,
                                               boolean servicioMedico, boolean servicioTI) throws Exception {
         Reserva existing = reservas.get(id);
+        boolean pf = existing != null ? existing.isServicioPlantaFisica() : false;
         String lay = existing != null ? existing.getArchivoLayout() : null;
         String layNom = existing != null ? existing.getArchivoLayoutNombre() : null;
-        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, servicioMedico, servicioTI, lay, layNom);
+        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, servicioMedico, servicioTI, pf, lay, layNom);
     }
 
     public synchronized Reserva updateReserva(int id, int idUsuario, int idEspacio, String fecha, 
                                               String horaInicio, String horaFin, 
                                               String motivo, String estado, String observaciones,
-                                              boolean servicioMedico, boolean servicioTI,
+                                              boolean servicioMedico, boolean servicioTI, boolean servicioPlantaFisica) throws Exception {
+        Reserva existing = reservas.get(id);
+        String lay = existing != null ? existing.getArchivoLayout() : null;
+        String layNom = existing != null ? existing.getArchivoLayoutNombre() : null;
+        return updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, observaciones, servicioMedico, servicioTI, servicioPlantaFisica, lay, layNom);
+    }
+
+    public synchronized Reserva updateReserva(int id, int idUsuario, int idEspacio, String fecha, 
+                                              String horaInicio, String horaFin, 
+                                              String motivo, String estado, String observaciones,
+                                              boolean servicioMedico, boolean servicioTI, boolean servicioPlantaFisica,
                                               String archivoLayout, String archivoLayoutNombre) throws Exception {
         Reserva r = reservas.get(id);
         if (r == null) throw new IllegalArgumentException("Reserva no encontrada (ID: " + id + ")");
@@ -322,6 +336,7 @@ public class DataStore {
         r.setObservaciones(observaciones);
         r.setServicioMedico(servicioMedico);
         r.setServicioTI(servicioTI);
+        r.setServicioPlantaFisica(servicioPlantaFisica);
         r.setArchivoLayout(archivoLayout);
         r.setArchivoLayoutNombre(archivoLayoutNombre);
         enrichReserva(r);
@@ -596,12 +611,16 @@ public class DataStore {
                              obs.toLowerCase().contains("pantallas") || obs.toLowerCase().contains("proyector") ||
                              obs.toLowerCase().contains("micrófono") || obs.toLowerCase().contains("microfono") ||
                              obs.toLowerCase().contains("equipo de audio")));
+                boolean pf = getBool(obj, "servicioPlantaFisica") || (obs != null && (obs.toLowerCase().contains("planta física") ||
+                             obs.toLowerCase().contains("planta fisica") || obs.toLowerCase().contains("mantenimiento") ||
+                             obs.toLowerCase().contains("mobiliario") || obs.toLowerCase().contains("[pf]")));
                 String lay = getString(obj, "archivoLayout");
                 String layNom = getString(obj, "archivoLayoutNombre");
                 if (id > 0) {
                     Reserva r = new Reserva(id, idU, idE, fec, hi, hf, mot, est, obs);
                     r.setServicioMedico(med);
                     r.setServicioTI(ti);
+                    r.setServicioPlantaFisica(pf);
                     if (lay != null && !lay.trim().isEmpty()) r.setArchivoLayout(lay);
                     if (layNom != null && !layNom.trim().isEmpty()) r.setArchivoLayoutNombre(layNom);
                     enrichReserva(r);

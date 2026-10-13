@@ -271,6 +271,7 @@ function renderDashboard() {
                         <strong>${escapeHtml(r.motivoEvento)}</strong>
                         ${r.servicioMedico ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ccfbf1;color:#0f766e;border:1px solid #5eead4;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-heartbeat"></i> Tecmi Care</span>` : ''}
                         ${r.servicioTI ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-laptop"></i> Soporte TI</span>` : ''}
+                        ${r.servicioPlantaFisica ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ffedd5;color:#c2410c;border:1px solid #fed7aa;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-wrench"></i> Planta Física</span>` : ''}
                         ${r.archivoLayout ? `<a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;text-decoration:none;" title="Ver archivo de layout adjunto: ${escapeHtml(r.archivoLayoutNombre || '')}"><i class="ph-bold ph-file-arrow-up"></i> Layout</a>` : ''}
                         ${profNombre ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(profNombre)}</div>` : ''}
                     </td>
@@ -434,6 +435,7 @@ function renderAgenda() {
                 <strong>${escapeHtml(r.motivoEvento)}</strong>
                 ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ccfbf1;color:#0f766e;border:1px solid #5eead4;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-heartbeat"></i> Tecmi Care Requerido</span></div>` : ''}
                 ${r.servicioTI ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-laptop"></i> Soporte TI Requerido</span></div>` : ''}
+                ${r.servicioPlantaFisica ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ffedd5;color:#c2410c;border:1px solid #fed7aa;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-wrench"></i> Planta Física Requerida</span></div>` : ''}
                 ${r.archivoLayout ? `<div style="margin-top:3px;"><a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;text-decoration:none;" title="Abrir archivo adjunto"><i class="ph-bold ph-paperclip"></i> Layout: ${escapeHtml(r.archivoLayoutNombre || 'Ver archivo')}</a></div>` : ''}
                 ${docenteNombre ? `<div style="font-size:0.75rem;color:var(--tecmilenio-green);font-weight:600;margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(docenteNombre)}</div>` : ''}
             </td>
@@ -1049,6 +1051,8 @@ function abrirModalNuevaReserva() {
     if (chkMed) chkMed.checked = false;
     const chkTI = document.getElementById('reservaServicioTI');
     if (chkTI) chkTI.checked = false;
+    const chkPF = document.getElementById('reservaServicioPlantaFisica');
+    if (chkPF) chkPF.checked = false;
 
     resetLayoutUploadUI();
 
@@ -1096,6 +1100,8 @@ function abrirEditarReserva(idReserva) {
     if (chkMed) chkMed.checked = !!r.servicioMedico;
     const chkTI = document.getElementById('reservaServicioTI');
     if (chkTI) chkTI.checked = !!r.servicioTI;
+    const chkPF = document.getElementById('reservaServicioPlantaFisica');
+    if (chkPF) chkPF.checked = !!r.servicioPlantaFisica;
 
     // Cargar archivo de layout si existe
     cargarLayoutEnEdicion(r);
@@ -1308,6 +1314,8 @@ async function handleReservaSubmit() {
     const servicioMedico = chkMed ? chkMed.checked : false;
     const chkTI = document.getElementById('reservaServicioTI');
     const servicioTI = chkTI ? chkTI.checked : false;
+    const chkPF = document.getElementById('reservaServicioPlantaFisica');
+    const servicioPlantaFisica = chkPF ? chkPF.checked : false;
 
     // Subida y procesamiento de archivo de layout (máx 10 MB)
     let finalLayoutUrl = document.getElementById('reservaLayoutUrl') ? document.getElementById('reservaLayoutUrl').value : '';
@@ -1352,6 +1360,7 @@ async function handleReservaSubmit() {
         observaciones: obs,
         servicioMedico: servicioMedico,
         servicioTI: servicioTI,
+        servicioPlantaFisica: servicioPlantaFisica,
         archivoLayout: finalLayoutUrl,
         archivoLayoutNombre: finalLayoutNombre
     };
@@ -1931,7 +1940,7 @@ function renderTimelineGrid() {
                     html += `
                         <td class="timeline-slot">
                             <div class="slot-busy-block ${cardClass}" title="${escapeHtml(r.motivoEvento)} (${r.horaInicio}-${r.horaFin}) - ${escapeHtml(r.nombreUsuario || '')}" onclick="abrirEditarReserva(${r.idReserva})">
-                                <span class="busy-title">${r.servicioMedico ? '🚑 ' : ''}${r.servicioTI ? '💻 ' : ''}${escapeHtml(r.motivoEvento)}</span>
+                                <span class="busy-title">${r.servicioMedico ? '🚑 ' : ''}${r.servicioTI ? '💻 ' : ''}${r.servicioPlantaFisica ? '🔧 ' : ''}${escapeHtml(r.motivoEvento)}</span>
                                 <span class="busy-time">${r.horaInicio} - ${r.horaFin}</span>
                             </div>
                         </td>
@@ -1985,6 +1994,7 @@ function exportarReservasCsv() {
         'Estado',
         'Tecmi Care',
         'Soporte TI',
+        'Planta Fisica',
         'Archivo Layout',
         'Observaciones'
     ];
@@ -2007,6 +2017,7 @@ function exportarReservasCsv() {
             r.estadoReserva,
             r.servicioMedico ? '"SI"' : '"NO"',
             r.servicioTI ? '"SI"' : '"NO"',
+            r.servicioPlantaFisica ? '"SI"' : '"NO"',
             r.archivoLayout ? `"${(r.archivoLayoutNombre || r.archivoLayout).replace(/"/g, '""')}"` : '""',
             `"${(r.observaciones || '').replace(/"/g, '""')}"`
         ];
@@ -2055,6 +2066,12 @@ function mostrarModalExitoReserva(idReserva) {
     if (elTI) {
         elTI.textContent = r.servicioTI ? '💻 SÍ REQUERIDO' : 'No requerido';
         elTI.style.color = r.servicioTI ? '#2563eb' : '#64748b';
+    }
+
+    const elPF = document.getElementById('exitoServicioPlantaFisica');
+    if (elPF) {
+        elPF.textContent = r.servicioPlantaFisica ? '🔧 SÍ REQUERIDO' : 'No requerido';
+        elPF.style.color = r.servicioPlantaFisica ? '#ea580c' : '#64748b';
     }
 
     const rowLay = document.getElementById('exitoRowLayout');
@@ -2288,7 +2305,7 @@ function descargarReporteWord(idReserva) {
             </tr>
         </table>
 
-        <div class="section-title">3. Requerimientos Especiales (Tecmi Care y Soporte de TI)</div>
+        <div class="section-title">3. Requerimientos Especiales (Tecmi Care, Soporte de TI y Planta Física)</div>
         <table class="data-table" cellpadding="0" cellspacing="0">
             <tr>
                 <th>Tecmi Care:</th>
@@ -2303,6 +2320,14 @@ function descargarReporteWord(idReserva) {
                 <td>
                     ${r.servicioTI 
                         ? `<span class="badge-urgent" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">💻 SÍ REQUERIDO (Se notifica a Tecnologías de Información)</span>` 
+                        : `<span class="badge-normal">No requerido para este evento</span>`}
+                </td>
+            </tr>
+            <tr>
+                <th>Planta Física:</th>
+                <td>
+                    ${r.servicioPlantaFisica 
+                        ? `<span class="badge-urgent" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">🔧 SÍ REQUERIDO (Se notifica a Operaciones y Planta Física de Campus)</span>` 
                         : `<span class="badge-normal">No requerido para este evento</span>`}
                 </td>
             </tr>
@@ -2405,6 +2430,7 @@ function descargarReporteExcelIndividual(idReserva) {
         ['Estado de la Reserva', r.estadoReserva],
         ['Tecmi Care Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
         ['Soporte de TI Requerido', r.servicioTI ? 'SÍ REQUERIDO' : 'NO'],
+        ['Planta Física Requerida', r.servicioPlantaFisica ? 'SÍ REQUERIDO' : 'NO'],
         ['Archivo de Layout Adjunto', r.archivoLayout ? `${r.archivoLayoutNombre || 'Layout'} (${r.archivoLayout})` : 'NO'],
         ['Responsable Solicitante', r.nombreUsuario || 'Responsable'],
         ['Rol del Solicitante', r.rolUsuario || 'Colaborador'],

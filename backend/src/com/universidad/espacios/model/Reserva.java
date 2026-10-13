@@ -12,6 +12,7 @@ public class Reserva {
     private String observaciones;
     private boolean servicioMedico;
     private boolean servicioTI;
+    private boolean servicioPlantaFisica;
     private String archivoLayout;
     private String archivoLayoutNombre;
 
@@ -47,6 +48,10 @@ public class Reserva {
                           obsLower.contains("pantallas") || obsLower.contains("proyector") ||
                           obsLower.contains("micrófono") || obsLower.contains("microfono") ||
                           obsLower.contains("equipo de audio");
+        this.servicioPlantaFisica = obsLower.contains("planta física") || obsLower.contains("planta fisica") || 
+                                    obsLower.contains("mantenimiento") || obsLower.contains("mobiliario") || 
+                                    obsLower.contains("montaje") || obsLower.contains("[pf]") || 
+                                    obsLower.contains("limpieza");
     }
 
     private static String normalizarHora(String h) {
@@ -111,6 +116,9 @@ public class Reserva {
     public boolean isServicioTI() { return servicioTI; }
     public void setServicioTI(boolean servicioTI) { this.servicioTI = servicioTI; }
 
+    public boolean isServicioPlantaFisica() { return servicioPlantaFisica; }
+    public void setServicioPlantaFisica(boolean servicioPlantaFisica) { this.servicioPlantaFisica = servicioPlantaFisica; }
+
     public String getArchivoLayout() { return archivoLayout; }
     public void setArchivoLayout(String archivoLayout) { this.archivoLayout = archivoLayout; }
 
@@ -130,6 +138,7 @@ public class Reserva {
             "\"estadoReserva\":\"%s\"," +
             "\"servicioMedico\":%b," +
             "\"servicioTI\":%b," +
+            "\"servicioPlantaFisica\":%b," +
             "\"archivoLayout\":\"%s\"," +
             "\"archivoLayoutNombre\":\"%s\"," +
             "\"observaciones\":\"%s\"," +
@@ -151,6 +160,7 @@ public class Reserva {
             escapeJson(estadoReserva),
             servicioMedico,
             servicioTI,
+            servicioPlantaFisica,
             escapeJson(archivoLayout != null ? archivoLayout : ""),
             escapeJson(archivoLayoutNombre != null ? archivoLayoutNombre : ""),
             escapeJson(observaciones),
