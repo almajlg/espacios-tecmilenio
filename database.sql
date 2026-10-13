@@ -209,7 +209,12 @@ INSERT INTO Espacios (nombre_espacio, tipo_espacio, capacidad, activo) VALUES
     ('Centro Estudiantil', 'Otro', 120, 1),
     ('SUM Prepa', 'Otro', 60, 1),
     ('Claustro', 'Otro', 40, 1),
-    ('Juicios Orales', 'Otro', 35, 1);
+    ('Juicios Orales', 'Otro', 35, 1),
+
+    -- Cubículos Mezanine (Regla institucional: ocupados de Lun a Vie de 7:00 a 15:00; agendables > 3:00 PM)
+    ('Mezanine (Cubículo 1)', 'Otro', 8, 1),
+    ('Mezanine (Cubículo 2)', 'Otro', 8, 1),
+    ('Mezanine (Cubículo 3)', 'Otro', 8, 1);
 
 -- Reservas de muestra (Tomadas del calendario real del Campus Cuautitlán)
 INSERT INTO Reservas (id_usuario, id_espacio, fecha_reserva, hora_inicio, hora_fin, motivo_evento, estado_reserva, observaciones) VALUES

@@ -891,6 +891,8 @@ h1, h2, h3, h4, .brand-text h2 {
 .badge-type.laboratorio { background: var(--purple-bg); color: var(--purple); border: 1px solid #e9d5ff; }
 .badge-type.cancha { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 .badge-type.otro { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.badge-type.mezanine { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.espacio-card.is-mezanine { border-top: 4px solid #ef4444; }
 
 /* ================================================================
    TOOLBARS Y FILTROS

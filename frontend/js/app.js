@@ -105,8 +105,24 @@ function isEdificio1(e) {
     return false;
 }
 
+function isMezanine(e) {
+    if (!e) return false;
+    const nom = (e.nombreEspacio || '').toLowerCase();
+    return nom.includes('mezanine');
+}
+
+function isWeekdayDate(fechaStr) {
+    if (!fechaStr) return false;
+    const parts = fechaStr.split('-');
+    if (parts.length < 3) return false;
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const day = d.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+    return day >= 1 && day <= 5;
+}
+
 function getEspacioEdificioLabel(e) {
     if (!e) return 'General';
+    if (isMezanine(e)) return 'Mezanine';
     if (isEdificio1(e)) return 'Edificio 1 (Prepa)';
     if (isEdificio2(e)) return 'Edificio 2 (Prof)';
     if (isAldea(e)) return 'Aldea';
@@ -367,8 +383,13 @@ function renderAgenda() {
                 const esp = state.espacios.find(e => e.idEspacio === r.idEspacio);
                 return isAldea(esp);
             });
+        } else if (tipoFiltro === 'Mezanine') {
+            filtradas = filtradas.filter(r => {
+                const esp = state.espacios.find(e => e.idEspacio === r.idEspacio);
+                return isMezanine(esp);
+            });
         } else {
-            filtradas = filtradas.filter(r => r.tipoEspacio === tipoFiltro);
+            filtradas = filtradas.filter(r => r.tipoEspacio === tipoFiltro && !isMezanine(state.espacios.find(e => e.idEspacio === r.idEspacio)));
         }
     }
     if (estadoFiltro) {
@@ -406,7 +427,7 @@ function renderAgenda() {
             <td><strong>${formatFecha(r.fechaReserva)}</strong></td>
             <td><strong>${r.horaInicio} - ${r.horaFin}</strong></td>
             <td><strong style="color:var(--tecmilenio-green);font-size:1.02rem;">${r.nombreEspacio}</strong></td>
-            <td><span class="badge-type ${isEdificio1(esp) ? 'edificio1' : isEdificio2(esp) ? 'edificio2' : isAldea(esp) ? 'aldea' : (r.tipoEspacio || '').toLowerCase()}">${ubicacion}</span></td>
+            <td><span class="badge-type ${isMezanine(esp) ? 'mezanine' : isEdificio1(esp) ? 'edificio1' : isEdificio2(esp) ? 'edificio2' : isAldea(esp) ? 'aldea' : (r.tipoEspacio || '').toLowerCase()}">${ubicacion}</span></td>
             <td>
                 <strong>${escapeHtml(r.motivoEvento)}</strong>
                 ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-first-aid"></i> Servicio Médico Requerido</span></div>` : ''}
@@ -660,8 +681,10 @@ function renderEspaciosGrid() {
             filtrados = filtrados.filter(isEdificio2);
         } else if (state.espacioFilter === 'Aldea') {
             filtrados = filtrados.filter(isAldea);
+        } else if (state.espacioFilter === 'Mezanine') {
+            filtrados = filtrados.filter(isMezanine);
         } else {
-            filtrados = filtrados.filter(e => e.tipoEspacio === state.espacioFilter);
+            filtrados = filtrados.filter(e => e.tipoEspacio === state.espacioFilter && !isMezanine(e));
         }
     }
     if (state.searchQuery) {
@@ -684,7 +707,12 @@ function renderEspaciosGrid() {
         let badgeClass = (e.tipoEspacio || '').toLowerCase();
         let subtitle = 'Espacio universitario disponible';
 
-        if (isEdificio1(e)) {
+        if (isMezanine(e)) {
+            cardTypeClass = 'is-mezanine';
+            badgeLabel = '📖 Mezanine';
+            badgeClass = 'mezanine';
+            subtitle = 'Cubículo institucional';
+        } else if (isEdificio1(e)) {
             cardTypeClass = 'is-edif1';
             badgeLabel = '🏢 Edificio 1 (Prepa)';
             badgeClass = 'edificio1';
@@ -735,6 +763,12 @@ function renderEspaciosGrid() {
                     <i class="ph-bold ph-info"></i>
                     <span>${subtitle}</span>
                 </div>
+                ${isMezanine(e) ? `
+                    <div style="margin-top:8px;background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:6px;font-size:0.75rem;color:#991b1b;display:flex;align-items:center;gap:6px;">
+                        <i class="ph-bold ph-lock" style="font-size:0.95rem;color:#dc2626;"></i>
+                        <span><strong>Ocupado Lun-Vie 07:00 a 15:00</strong><br><span style="color:#15803d;font-weight:600;">Disponible a partir de las 3:00 PM</span></span>
+                    </div>
+                ` : ''}
             </div>
 
             <div class="espacio-actions">
@@ -854,8 +888,12 @@ function populateSelects() {
                 filter: e => e.tipoEspacio === 'Cancha'
             },
             {
+                label: '📖 Cubículos Mezanine (Ocupado Lun-Vie 7-15h | Libre > 3 PM)',
+                filter: isMezanine
+            },
+            {
                 label: '🌅 Otros Espacios',
-                filter: e => e.tipoEspacio === 'Otro'
+                filter: e => e.tipoEspacio === 'Otro' && !isMezanine(e)
             }
         ];
 
@@ -945,11 +983,16 @@ function setupModals() {
             const hint = document.getElementById('espacioHint');
             const capInput = document.getElementById('reservaCapacidad');
             if (esp) {
-                if (hint) hint.textContent = `${getEspacioEdificioLabel(esp)} - Capacidad sugerida: ${esp.capacidad} personas`;
+                if (isMezanine(esp)) {
+                    if (hint) hint.innerHTML = `<span style="color:#b91c1c;font-weight:600;"><i class="ph-bold ph-warning"></i> Cubículo Mezanine: Ocupado de lunes a viernes de 7:00 AM a 3:00 PM. Se puede agendar después de las 3:00 PM.</span>`;
+                } else {
+                    if (hint) hint.textContent = `${getEspacioEdificioLabel(esp)} - Capacidad sugerida: ${esp.capacidad} personas`;
+                }
                 if (capInput && !capInput.value) capInput.value = esp.capacidad;
             } else {
                 if (hint) hint.textContent = '';
             }
+            checkConflictNow();
         };
     }
 }
@@ -1022,6 +1065,15 @@ function abrirEditarReserva(idReserva) {
 }
 
 function openReservaEnHorario(idEspacio, fecha, hInicio, hFin) {
+    const esp = state.espacios.find(e => e.idEspacio === idEspacio);
+    if (esp && isMezanine(esp) && isWeekdayDate(fecha)) {
+        const sMin = toMinutes(hInicio);
+        const eMin = toMinutes(hFin);
+        if (sMin < 15 * 60 && eMin > 7 * 60) {
+            showToast('Los cubículos de Mezanine están ocupados de lunes a viernes de 7:00 AM a 3:00 PM. Solo se puede agendar después de las 3:00 PM.', 'warning');
+            return;
+        }
+    }
     abrirModalNuevaReserva();
     const select = document.getElementById('reservaEspacio');
     select.value = idEspacio;
@@ -1119,10 +1171,21 @@ function checkConflictNow() {
         return;
     }
 
-    // Comprobar conflicto localmente con las reservas activas
     const editId = parseInt(document.getElementById('reservaEditId').value) || 0;
     const startMin = toMinutes(hInicio);
     const endMin = toMinutes(hFin);
+
+    // Restricción institucional: Mezanine ocupado de Lunes a Viernes de 7:00 a 15:00 (3:00 PM)
+    const espSeleccionado = state.espacios.find(x => x.idEspacio === idE);
+    if (espSeleccionado && isMezanine(espSeleccionado) && isWeekdayDate(fecha)) {
+        if (startMin < 15 * 60 && endMin > 7 * 60) {
+            alertBox.style.display = 'flex';
+            document.getElementById('conflictTitle').textContent = `¡Cubículo de Mezanine Ocupado!`;
+            document.getElementById('conflictDesc').textContent = `Todos los cubículos de Mezanine están ocupados de lunes a viernes de 7:00 AM a 3:00 PM (15:00). Después de las 3:00 PM se puede agendar.`;
+            submitBtn.disabled = true;
+            return;
+        }
+    }
 
     const conflicto = state.reservas.find(r => {
         if (editId && r.idReserva === editId) return false;
@@ -1170,6 +1233,20 @@ async function handleReservaSubmit() {
     if (usuarioAutorizado && usuarioAutorizado.rol === 'Profesor') {
         showToast('Los profesores NO tienen autorización para agendar por su cuenta. Selecciona a un Responsable o Colaborador.', 'error');
         return;
+    }
+
+    // Validar regla institucional de Mezanine (Lunes a Viernes 7:00 a 15:00 ocupado)
+    const espSeleccionado = state.espacios.find(e => e.idEspacio === idEspacio);
+    const fechaReservaVal = document.getElementById('reservaFecha').value;
+    const hInicioVal = document.getElementById('reservaHoraInicio').value;
+    const hFinVal = document.getElementById('reservaHoraFin').value;
+    if (espSeleccionado && isMezanine(espSeleccionado) && isWeekdayDate(fechaReservaVal)) {
+        const sMin = toMinutes(hInicioVal);
+        const eMin = toMinutes(hFinVal);
+        if (sMin < 15 * 60 && eMin > 7 * 60) {
+            showToast('Los cubículos de Mezanine están ocupados de lunes a viernes de 7:00 AM a 3:00 PM. Solo se puede agendar a partir de las 3:00 PM.', 'error');
+            return;
+        }
     }
 
     // Profesor asignado a la clase (si se especificó en el selector)
@@ -1538,14 +1615,15 @@ function renderTimelineGrid() {
         if (tipoFiltro === 'Edificio1') espacios = espacios.filter(isEdificio1);
         else if (tipoFiltro === 'Edificio2') espacios = espacios.filter(isEdificio2);
         else if (tipoFiltro === 'Aldea') espacios = espacios.filter(isAldea);
-        else espacios = espacios.filter(e => e.tipoEspacio === tipoFiltro);
+        else if (tipoFiltro === 'Mezanine') espacios = espacios.filter(isMezanine);
+        else espacios = espacios.filter(e => e.tipoEspacio === tipoFiltro && !isMezanine(e));
     }
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         espacios = espacios.filter(e => e.nombreEspacio.toLowerCase().includes(q) || e.tipoEspacio.toLowerCase().includes(q));
     }
 
-    // Ordenar: Edificio 1 primero, luego Edificio 2, luego Aldea, luego otros
+    // Ordenar: Edificio 1 primero, luego Edificio 2, luego Aldea, luego Mezanine, luego otros
     espacios.sort((a, b) => {
         const a1 = isEdificio1(a);
         const b1 = isEdificio1(b);
@@ -1561,6 +1639,11 @@ function renderTimelineGrid() {
         const b3 = isAldea(b);
         if (a3 && !b3) return -1;
         if (!a3 && b3) return 1;
+
+        const m1 = isMezanine(a);
+        const m2 = isMezanine(b);
+        if (m1 && !m2) return -1;
+        if (!m1 && m2) return 1;
 
         return a.nombreEspacio.localeCompare(b.nombreEspacio, undefined, { numeric: true });
     });
@@ -1583,7 +1666,7 @@ function renderTimelineGrid() {
     } else {
         espacios.forEach(e => {
             const reservasEspacio = reservasDelDia.filter(r => r.idEspacio === e.idEspacio);
-            const badgeIcon = isEdificio1(e) ? '🏢' : isEdificio2(e) ? '🏛️' : isAldea(e) ? '🌿' : e.tipoEspacio === 'Laboratorio' ? '🧪' : e.tipoEspacio === 'Cancha' ? '⚽' : '🌅';
+            const badgeIcon = isMezanine(e) ? '📖' : isEdificio1(e) ? '🏢' : isEdificio2(e) ? '🏛️' : isAldea(e) ? '🌿' : e.tipoEspacio === 'Laboratorio' ? '🧪' : e.tipoEspacio === 'Cancha' ? '⚽' : '🌅';
 
             html += `
                 <tr>
@@ -1608,6 +1691,7 @@ function renderTimelineGrid() {
                     if (isEdificio1(e)) cardClass = 'is-edif1';
                     else if (isEdificio2(e)) cardClass = 'is-edif2';
                     else if (isAldea(e)) cardClass = 'is-aldea';
+                    else if (isMezanine(e)) cardClass = 'is-mezanine';
                     else if (e.tipoEspacio === 'Otro') cardClass = 'is-otro';
 
                     html += `
@@ -1618,11 +1702,22 @@ function renderTimelineGrid() {
                             </div>
                         </td>
                     `;
-                } else {
-                    const horaFinSugerida = String(parseInt(hora.split(':')[0]) + 1).padStart(2, '0') + ':00';
+                } else if (isMezanine(e) && isWeekdayDate(dateVal) && horaMin < 15 * 60 && horaFinBloqueMin > 7 * 60) {
+                    // Bloqueo visual estricto de Mezanine de Lunes a Viernes de 7:00 a 15:00
                     html += `
                         <td class="timeline-slot">
-                            <div class="slot-free" title="Salón libre. Clic para agendar a las ${hora}" onclick="openReservaEnHorario(${e.idEspacio}, '${dateVal}', '${hora}', '${horaFinSugerida}')"></div>
+                            <div class="slot-busy-block" style="background:#fee2e2;border:1px dashed #ef4444;color:#991b1b;cursor:not-allowed;" title="Mezanine ocupado de lunes a viernes de 7:00 a 15:00. Disponible a partir de las 3:00 PM." onclick="showToast('Los cubículos de Mezanine están ocupados de 7:00 a 15:00 de lunes a viernes. Agendables a partir de las 3:00 PM.', 'warning')">
+                                <span class="busy-title" style="font-size:0.7rem;font-weight:700;"><i class="ph-bold ph-lock"></i> Ocupado</span>
+                                <span class="busy-time" style="font-size:0.65rem;">07:00 - 15:00</span>
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    const horaFinSugerida = String(parseInt(hora.split(':')[0]) + 1).padStart(2, '0') + ':00';
+                    const hintLibre = isMezanine(e) ? 'Cubículo Mezanine libre. Clic para agendar después de las 3:00 PM' : `Salón libre. Clic para agendar a las ${hora}`;
+                    html += `
+                        <td class="timeline-slot">
+                            <div class="slot-free" title="${hintLibre}" onclick="openReservaEnHorario(${e.idEspacio}, '${dateVal}', '${hora}', '${horaFinSugerida}')"></div>
                         </td>
                     `;
                 }

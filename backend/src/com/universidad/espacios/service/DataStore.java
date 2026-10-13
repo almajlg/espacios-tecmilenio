@@ -6,6 +6,8 @@ import com.universidad.espacios.model.Usuario;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -128,6 +130,24 @@ public class DataStore {
             return null; // El validador capturará hora de inicio >= hora fin
         }
 
+        // Restricción institucional: Mezanine ocupado de Lunes a Viernes de 07:00 a 15:00 (3:00 PM)
+        Espacio espacioObj = espacios.get(idEspacio);
+        if (isMezanineCubiculo(espacioObj)) {
+            try {
+                LocalDate ld = LocalDate.parse(fecha);
+                DayOfWeek dow = ld.getDayOfWeek();
+                if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
+                    if (startMin < 15 * 60 && endMin > 7 * 60) {
+                        Reserva mezanineLock = new Reserva(-1, 0, idEspacio, fecha, "07:00", "15:00",
+                            "Ocupación fija de Mezanine (07:00 a 15:00)", "Activa",
+                            "Todos los cubículos de Mezanine están ocupados de lunes a viernes de 7:00 a 15:00. Disponibles a partir de las 3:00 PM.");
+                        enrichReserva(mezanineLock);
+                        return mezanineLock;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         for (Reserva r : reservas.values()) {
             if (r.getIdReserva() == excludeId) continue;
             if (r.getIdEspacio() != idEspacio) continue;
@@ -164,6 +184,8 @@ public class DataStore {
         if (startMin >= endMin) {
             throw new IllegalArgumentException("La hora de inicio (" + horaInicio + ") debe ser anterior a la hora de fin (" + horaFin + ").");
         }
+
+        validateMezanineSchedule(e, fecha, startMin, endMin);
 
         Reserva conflicto = checkConflict(idEspacio, fecha, horaInicio, horaFin, -1);
         if (conflicto != null) {
@@ -233,6 +255,7 @@ public class DataStore {
         }
 
         if ("Activa".equalsIgnoreCase(estado)) {
+            validateMezanineSchedule(e, fecha, startMin, endMin);
             Reserva conflicto = checkConflict(idEspacio, fecha, horaInicio, horaFin, id);
             if (conflicto != null) {
                 throw new IllegalStateException("Conflicto de horario: El espacio '" + e.getNombreEspacio() + 
@@ -277,12 +300,33 @@ public class DataStore {
         }
     }
 
-    private int timeToMinutes(String time) {
+    public static int timeToMinutes(String time) {
         if (time == null) return 0;
         String[] parts = time.trim().split(":");
         int h = Integer.parseInt(parts[0]);
         int m = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
         return h * 60 + m;
+    }
+
+    public static boolean isMezanineCubiculo(Espacio e) {
+        if (e == null || e.getNombreEspacio() == null) return false;
+        return e.getNombreEspacio().toLowerCase().contains("mezanine");
+    }
+
+    public static void validateMezanineSchedule(Espacio e, String fecha, int startMin, int endMin) {
+        if (isMezanineCubiculo(e)) {
+            try {
+                LocalDate ld = LocalDate.parse(fecha);
+                DayOfWeek dow = ld.getDayOfWeek();
+                if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
+                    if (startMin < 15 * 60 && endMin > 7 * 60) {
+                        throw new IllegalStateException("Restricción Mezanine: Todos los cubículos de Mezanine están ocupados de lunes a viernes de 07:00 a 15:00 (3:00 PM). Únicamente se puede agendar a partir de las 3:00 PM.");
+                    }
+                }
+            } catch (IllegalStateException ise) {
+                throw ise;
+            } catch (Exception ignored) {}
+        }
     }
 
     // ================================================================
@@ -343,6 +387,11 @@ public class DataStore {
         addEspacio("SUM Prepa", "Otro", 60, true);
         addEspacio("Claustro", "Otro", 40, true);
         addEspacio("Juicios Orales", "Otro", 35, true);
+
+        // Cubículos Mezanine
+        addEspacio("Mezanine (Cubículo 1)", "Otro", 8, true);
+        addEspacio("Mezanine (Cubículo 2)", "Otro", 8, true);
+        addEspacio("Mezanine (Cubículo 3)", "Otro", 8, true);
 
         // Reservas iniciales tomadas del calendario real del Campus Cuautitlán
         try {
