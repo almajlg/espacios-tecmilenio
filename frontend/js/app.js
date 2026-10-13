@@ -269,7 +269,7 @@ function renderDashboard() {
                     <td><span class="badge-type ${isEdificio1(esp) ? 'edificio1' : isEdificio2(esp) ? 'edificio2' : isAldea(esp) ? 'aldea' : (r.tipoEspacio || '').toLowerCase()}">${ubicacion}</span></td>
                     <td>
                         <strong>${escapeHtml(r.motivoEvento)}</strong>
-                        ${r.servicioMedico ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-first-aid"></i> Servicio Médico</span>` : ''}
+                        ${r.servicioMedico ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ccfbf1;color:#0f766e;border:1px solid #5eead4;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-heartbeat"></i> Tecmi Care</span>` : ''}
                         ${r.servicioTI ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-laptop"></i> Soporte TI</span>` : ''}
                         ${r.archivoLayout ? `<a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;text-decoration:none;" title="Ver archivo de layout adjunto: ${escapeHtml(r.archivoLayoutNombre || '')}"><i class="ph-bold ph-file-arrow-up"></i> Layout</a>` : ''}
                         ${profNombre ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(profNombre)}</div>` : ''}
@@ -432,7 +432,7 @@ function renderAgenda() {
             <td><span class="badge-type ${isMezanine(esp) ? 'mezanine' : isEdificio1(esp) ? 'edificio1' : isEdificio2(esp) ? 'edificio2' : isAldea(esp) ? 'aldea' : (r.tipoEspacio || '').toLowerCase()}">${ubicacion}</span></td>
             <td>
                 <strong>${escapeHtml(r.motivoEvento)}</strong>
-                ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-first-aid"></i> Servicio Médico Requerido</span></div>` : ''}
+                ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#ccfbf1;color:#0f766e;border:1px solid #5eead4;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-heartbeat"></i> Tecmi Care Requerido</span></div>` : ''}
                 ${r.servicioTI ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-laptop"></i> Soporte TI Requerido</span></div>` : ''}
                 ${r.archivoLayout ? `<div style="margin-top:3px;"><a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;text-decoration:none;" title="Abrir archivo adjunto"><i class="ph-bold ph-paperclip"></i> Layout: ${escapeHtml(r.archivoLayoutNombre || 'Ver archivo')}</a></div>` : ''}
                 ${docenteNombre ? `<div style="font-size:0.75rem;color:var(--tecmilenio-green);font-weight:600;margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(docenteNombre)}</div>` : ''}
@@ -1983,7 +1983,7 @@ function exportarReservasCsv() {
         'Correo Institucional',
         'Rol',
         'Estado',
-        'Servicio Medico',
+        'Tecmi Care',
         'Soporte TI',
         'Archivo Layout',
         'Observaciones'
@@ -2047,8 +2047,8 @@ function mostrarModalExitoReserva(idReserva) {
 
     const elMed = document.getElementById('exitoServicioMedico');
     if (elMed) {
-        elMed.textContent = r.servicioMedico ? '🚨 SÍ REQUERIDO' : 'No requerido';
-        elMed.style.color = r.servicioMedico ? '#dc2626' : '#64748b';
+        elMed.textContent = r.servicioMedico ? '🩺 SÍ REQUERIDO' : 'No requerido';
+        elMed.style.color = r.servicioMedico ? '#0d9488' : '#64748b';
     }
 
     const elTI = document.getElementById('exitoServicioTI');
@@ -2288,13 +2288,13 @@ function descargarReporteWord(idReserva) {
             </tr>
         </table>
 
-        <div class="section-title">3. Requerimientos Especiales (Servicio Médico y Soporte de TI)</div>
+        <div class="section-title">3. Requerimientos Especiales (Tecmi Care y Soporte de TI)</div>
         <table class="data-table" cellpadding="0" cellspacing="0">
             <tr>
-                <th>Servicio Médico:</th>
+                <th>Tecmi Care:</th>
                 <td>
                     ${r.servicioMedico 
-                        ? `<span class="badge-urgent">🚨 SÍ REQUERIDO (Se notifica a Enfermería y Paramédico de Campus)</span>` 
+                        ? `<span class="badge-urgent" style="background:#ccfbf1;color:#0f766e;border:1px solid #5eead4;">🩺 SÍ REQUERIDO (Se notifica a Tecmi Care / Enfermería de Campus)</span>` 
                         : `<span class="badge-normal">No requerido para este evento</span>`}
                 </td>
             </tr>
@@ -2403,7 +2403,7 @@ function descargarReporteExcelIndividual(idReserva) {
         ['Tipo de Espacio', r.tipoEspacio || 'General'],
         ['Capacidad Estimada', r.capacidadRequerida || (esp ? esp.capacidad : 30)],
         ['Estado de la Reserva', r.estadoReserva],
-        ['Servicio Médico Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
+        ['Tecmi Care Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
         ['Soporte de TI Requerido', r.servicioTI ? 'SÍ REQUERIDO' : 'NO'],
         ['Archivo de Layout Adjunto', r.archivoLayout ? `${r.archivoLayoutNombre || 'Layout'} (${r.archivoLayout})` : 'NO'],
         ['Responsable Solicitante', r.nombreUsuario || 'Responsable'],

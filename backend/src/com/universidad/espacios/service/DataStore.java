@@ -227,7 +227,10 @@ public class DataStore {
     public synchronized Reserva addReserva(int idUsuario, int idEspacio, String fecha, 
                                           String horaInicio, String horaFin, 
                                           String motivo, String observaciones) throws Exception {
-        boolean med = observaciones != null && (observaciones.toLowerCase().contains("servicio médico") || observaciones.toLowerCase().contains("servicio medico"));
+        boolean med = observaciones != null && (observaciones.toLowerCase().contains("servicio médico") || 
+                                               observaciones.toLowerCase().contains("servicio medico") ||
+                                               observaciones.toLowerCase().contains("tecmi care") ||
+                                               observaciones.toLowerCase().contains("tecmicare"));
         boolean ti = observaciones != null && (observaciones.toLowerCase().contains("servicio ti") || 
                                                observaciones.toLowerCase().contains("soporte ti") || 
                                                observaciones.toLowerCase().contains("[ti]"));
@@ -586,7 +589,8 @@ public class DataStore {
                 String mot = getString(obj, "motivoEvento");
                 String est = getString(obj, "estadoReserva");
                 String obs = getString(obj, "observaciones");
-                boolean med = getBool(obj, "servicioMedico") || (obs != null && (obs.toLowerCase().contains("servicio médico") || obs.toLowerCase().contains("servicio medico")));
+                boolean med = getBool(obj, "servicioMedico") || (obs != null && (obs.toLowerCase().contains("servicio médico") || 
+                              obs.toLowerCase().contains("servicio medico") || obs.toLowerCase().contains("tecmi care") || obs.toLowerCase().contains("tecmicare")));
                 boolean ti = getBool(obj, "servicioTI") || (obs != null && (obs.toLowerCase().contains("servicio ti") || 
                              obs.toLowerCase().contains("soporte ti") || obs.toLowerCase().contains("[ti]") ||
                              obs.toLowerCase().contains("pantallas") || obs.toLowerCase().contains("proyector") ||

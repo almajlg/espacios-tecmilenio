@@ -39,7 +39,8 @@ public class Reserva {
         this.estadoReserva = estadoReserva != null ? estadoReserva : "Activa";
         this.observaciones = observaciones != null ? observaciones : "";
         String obsLower = this.observaciones.toLowerCase();
-        this.servicioMedico = obsLower.contains("servicio médico") || obsLower.contains("servicio medico");
+        this.servicioMedico = obsLower.contains("servicio médico") || obsLower.contains("servicio medico") ||
+                              obsLower.contains("tecmi care") || obsLower.contains("tecmicare");
         this.servicioTI = obsLower.contains("servicio ti") || obsLower.contains("soporte ti") || 
                           obsLower.contains("[ti]") || obsLower.contains("tecnologías de la información") || 
                           obsLower.contains("tecnologias de la informacion") ||
