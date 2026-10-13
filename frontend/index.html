@@ -666,13 +666,23 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group col-12">
-                        <label for="reservaServicioMedico" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-weight: 500; transition: all 0.2s ease;">
-                            <input type="checkbox" id="reservaServicioMedico" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #e11d48;">
+                    <div class="form-group col-6">
+                        <label for="reservaServicioMedico" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%;">
+                            <input type="checkbox" id="reservaServicioMedico" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #e11d48; flex-shrink: 0;">
                             <span>
                                 <i class="ph-bold ph-first-aid" style="color: #e11d48; font-size: 1.2rem; vertical-align: middle;"></i>
                                 <strong style="color: #9f1239;">¿Requiere Servicio Médico?</strong> 
-                                <span style="color: #64748b; font-size: 0.85rem; font-weight: 400; margin-left: 4px;">(Marcar casilla si el evento requiere asistencia médica en sitio)</span>
+                                <span style="display: block; color: #64748b; font-size: 0.78rem; font-weight: 400; margin-top: 2px;">(Asistencia médica / enfermería en sitio)</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="reservaServicioTI" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; height: 100%;">
+                            <input type="checkbox" id="reservaServicioTI" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #2563eb; flex-shrink: 0;">
+                            <span>
+                                <i class="ph-bold ph-laptop" style="color: #2563eb; font-size: 1.2rem; vertical-align: middle;"></i>
+                                <strong style="color: #1e40af;">¿Requiere Soporte de TI?</strong> 
+                                <span style="display: block; color: #64748b; font-size: 0.78rem; font-weight: 400; margin-top: 2px;">(Cómputo, audio, proyector o soporte técnico)</span>
                             </span>
                         </label>
                     </div>
@@ -845,9 +855,13 @@
                     <span style="color: #64748b;"><i class="ph-bold ph-calendar"></i> Fecha y Horario:</span>
                     <strong id="exitoHorario">-</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between;" id="exitoRowServicioMedico">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;" id="exitoRowServicioMedico">
                     <span style="color: #64748b;"><i class="ph-bold ph-first-aid"></i> Servicio Médico:</span>
                     <strong id="exitoServicioMedico" style="color: #dc2626;">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;" id="exitoRowServicioTI">
+                    <span style="color: #64748b;"><i class="ph-bold ph-laptop"></i> Soporte de TI:</span>
+                    <strong id="exitoServicioTI" style="color: #2563eb;">-</strong>
                 </div>
             </div>
 

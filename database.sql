@@ -62,6 +62,8 @@ CREATE TABLE Reservas (
     hora_fin TIME NOT NULL,
     motivo_evento VARCHAR(255) NOT NULL,
     estado_reserva ENUM('Activa', 'Cancelada', 'Completada') DEFAULT 'Activa',
+    servicio_medico TINYINT(1) DEFAULT 0,
+    servicio_ti TINYINT(1) DEFAULT 0,
     observaciones TEXT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     

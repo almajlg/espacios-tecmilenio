@@ -270,6 +270,7 @@ function renderDashboard() {
                     <td>
                         <strong>${escapeHtml(r.motivoEvento)}</strong>
                         ${r.servicioMedico ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-first-aid"></i> Servicio Médico</span>` : ''}
+                        ${r.servicioTI ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-laptop"></i> Soporte TI</span>` : ''}
                         ${profNombre ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(profNombre)}</div>` : ''}
                     </td>
                     <td>
@@ -431,6 +432,7 @@ function renderAgenda() {
             <td>
                 <strong>${escapeHtml(r.motivoEvento)}</strong>
                 ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-first-aid"></i> Servicio Médico Requerido</span></div>` : ''}
+                ${r.servicioTI ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-laptop"></i> Soporte TI Requerido</span></div>` : ''}
                 ${docenteNombre ? `<div style="font-size:0.75rem;color:var(--tecmilenio-green);font-weight:600;margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(docenteNombre)}</div>` : ''}
             </td>
             <td>
@@ -1020,6 +1022,8 @@ function abrirModalNuevaReserva() {
     
     const chkMed = document.getElementById('reservaServicioMedico');
     if (chkMed) chkMed.checked = false;
+    const chkTI = document.getElementById('reservaServicioTI');
+    if (chkTI) chkTI.checked = false;
 
     const rowEstado = document.getElementById('rowReservaEstado');
     if (rowEstado) rowEstado.style.display = 'none';
@@ -1053,6 +1057,8 @@ function abrirEditarReserva(idReserva) {
 
     const chkMed = document.getElementById('reservaServicioMedico');
     if (chkMed) chkMed.checked = !!r.servicioMedico;
+    const chkTI = document.getElementById('reservaServicioTI');
+    if (chkTI) chkTI.checked = !!r.servicioTI;
 
     const rowEstado = document.getElementById('rowReservaEstado');
     if (rowEstado) {
@@ -1260,6 +1266,8 @@ async function handleReservaSubmit() {
 
     const chkMed = document.getElementById('reservaServicioMedico');
     const servicioMedico = chkMed ? chkMed.checked : false;
+    const chkTI = document.getElementById('reservaServicioTI');
+    const servicioTI = chkTI ? chkTI.checked : false;
 
     const payload = {
         idUsuario: idUsuario,
@@ -1269,7 +1277,8 @@ async function handleReservaSubmit() {
         horaFin: document.getElementById('reservaHoraFin').value,
         motivoEvento: document.getElementById('reservaMotivo').value.trim(),
         observaciones: obs,
-        servicioMedico: servicioMedico
+        servicioMedico: servicioMedico,
+        servicioTI: servicioTI
     };
 
     if (editId) {
@@ -1697,7 +1706,7 @@ function renderTimelineGrid() {
                     html += `
                         <td class="timeline-slot">
                             <div class="slot-busy-block ${cardClass}" title="${escapeHtml(r.motivoEvento)} (${r.horaInicio}-${r.horaFin}) - ${escapeHtml(r.nombreUsuario || '')}" onclick="abrirEditarReserva(${r.idReserva})">
-                                <span class="busy-title">${r.servicioMedico ? '🚑 ' : ''}${escapeHtml(r.motivoEvento)}</span>
+                                <span class="busy-title">${r.servicioMedico ? '🚑 ' : ''}${r.servicioTI ? '💻 ' : ''}${escapeHtml(r.motivoEvento)}</span>
                                 <span class="busy-time">${r.horaInicio} - ${r.horaFin}</span>
                             </div>
                         </td>
@@ -1749,6 +1758,8 @@ function exportarReservasCsv() {
         'Correo Institucional',
         'Rol',
         'Estado',
+        'Servicio Medico',
+        'Soporte TI',
         'Observaciones'
     ];
 
@@ -1768,6 +1779,8 @@ function exportarReservasCsv() {
             `"${(r.correoUsuario || '').replace(/"/g, '""')}"`,
             `"${(r.rolUsuario || '').replace(/"/g, '""')}"`,
             r.estadoReserva,
+            r.servicioMedico ? '"SI"' : '"NO"',
+            r.servicioTI ? '"SI"' : '"NO"',
             `"${(r.observaciones || '').replace(/"/g, '""')}"`
         ];
     });
@@ -1809,6 +1822,12 @@ function mostrarModalExitoReserva(idReserva) {
     if (elMed) {
         elMed.textContent = r.servicioMedico ? '🚨 SÍ REQUERIDO' : 'No requerido';
         elMed.style.color = r.servicioMedico ? '#dc2626' : '#64748b';
+    }
+
+    const elTI = document.getElementById('exitoServicioTI');
+    if (elTI) {
+        elTI.textContent = r.servicioTI ? '💻 SÍ REQUERIDO' : 'No requerido';
+        elTI.style.color = r.servicioTI ? '#2563eb' : '#64748b';
     }
 
     const btnWord = document.getElementById('btnDescargarWordModal');
@@ -2030,13 +2049,21 @@ function descargarReporteWord(idReserva) {
             </tr>
         </table>
 
-        <div class="section-title">3. Requerimientos Especiales y Servicio Médico</div>
+        <div class="section-title">3. Requerimientos Especiales (Servicio Médico y Soporte de TI)</div>
         <table class="data-table" cellpadding="0" cellspacing="0">
             <tr>
                 <th>Servicio Médico:</th>
                 <td>
                     ${r.servicioMedico 
                         ? `<span class="badge-urgent">🚨 SÍ REQUERIDO (Se notifica a Enfermería y Paramédico de Campus)</span>` 
+                        : `<span class="badge-normal">No requerido para este evento</span>`}
+                </td>
+            </tr>
+            <tr>
+                <th>Soporte de TI:</th>
+                <td>
+                    ${r.servicioTI 
+                        ? `<span class="badge-urgent" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">💻 SÍ REQUERIDO (Se notifica a Tecnologías de Información)</span>` 
                         : `<span class="badge-normal">No requerido para este evento</span>`}
                 </td>
             </tr>
@@ -2134,6 +2161,7 @@ function descargarReporteExcelIndividual(idReserva) {
         ['Capacidad Estimada', r.capacidadRequerida || (esp ? esp.capacidad : 30)],
         ['Estado de la Reserva', r.estadoReserva],
         ['Servicio Médico Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
+        ['Soporte de TI Requerido', r.servicioTI ? 'SÍ REQUERIDO' : 'NO'],
         ['Responsable Solicitante', r.nombreUsuario || 'Responsable'],
         ['Rol del Solicitante', r.rolUsuario || 'Colaborador'],
         ['Correo Institucional', r.correoUsuario || 'N/A'],

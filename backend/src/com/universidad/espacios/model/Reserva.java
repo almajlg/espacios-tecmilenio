@@ -11,6 +11,7 @@ public class Reserva {
     private String estadoReserva = "Activa"; // "Activa", "Cancelada", "Completada"
     private String observaciones;
     private boolean servicioMedico;
+    private boolean servicioTI;
 
     // Campos enriquecidos para la vista/API
     private String nombreUsuario;
@@ -35,7 +36,14 @@ public class Reserva {
         this.motivoEvento = motivoEvento;
         this.estadoReserva = estadoReserva != null ? estadoReserva : "Activa";
         this.observaciones = observaciones != null ? observaciones : "";
-        this.servicioMedico = this.observaciones.toLowerCase().contains("servicio médico");
+        String obsLower = this.observaciones.toLowerCase();
+        this.servicioMedico = obsLower.contains("servicio médico") || obsLower.contains("servicio medico");
+        this.servicioTI = obsLower.contains("servicio ti") || obsLower.contains("soporte ti") || 
+                          obsLower.contains("[ti]") || obsLower.contains("tecnologías de la información") || 
+                          obsLower.contains("tecnologias de la informacion") ||
+                          obsLower.contains("pantallas") || obsLower.contains("proyector") ||
+                          obsLower.contains("micrófono") || obsLower.contains("microfono") ||
+                          obsLower.contains("equipo de audio");
     }
 
     private static String normalizarHora(String h) {
@@ -97,6 +105,9 @@ public class Reserva {
     public boolean isServicioMedico() { return servicioMedico; }
     public void setServicioMedico(boolean servicioMedico) { this.servicioMedico = servicioMedico; }
 
+    public boolean isServicioTI() { return servicioTI; }
+    public void setServicioTI(boolean servicioTI) { this.servicioTI = servicioTI; }
+
     public String toJson() {
         return String.format(
             "{" +
@@ -109,6 +120,7 @@ public class Reserva {
             "\"motivoEvento\":\"%s\"," +
             "\"estadoReserva\":\"%s\"," +
             "\"servicioMedico\":%b," +
+            "\"servicioTI\":%b," +
             "\"observaciones\":\"%s\"," +
             "\"nombreUsuario\":\"%s\"," +
             "\"correoUsuario\":\"%s\"," +
@@ -127,6 +139,7 @@ public class Reserva {
             escapeJson(motivoEvento),
             escapeJson(estadoReserva),
             servicioMedico,
+            servicioTI,
             escapeJson(observaciones),
             escapeJson(nombreUsuario),
             escapeJson(correoUsuario),

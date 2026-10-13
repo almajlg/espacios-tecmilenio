@@ -216,6 +216,7 @@ public class ApiHandler implements HttpHandler {
         String motivo = getJsonString(body, "motivoEvento");
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
+        boolean servicioTI = getJsonBool(body, "servicioTI");
 
         if (idUsuario <= 0 || idEspacio <= 0) {
             throw new IllegalArgumentException("Debe seleccionar un usuario y un espacio válidos.");
@@ -227,7 +228,7 @@ public class ApiHandler implements HttpHandler {
             throw new IllegalArgumentException("El motivo o nombre del evento es obligatorio.");
         }
 
-        Reserva r = dataStore.addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, obs, servicioMedico);
+        Reserva r = dataStore.addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, obs, servicioMedico, servicioTI);
         sendJsonResponse(exchange, 201, r.toJson());
     }
 
@@ -243,6 +244,7 @@ public class ApiHandler implements HttpHandler {
         String estado = getJsonString(body, "estadoReserva");
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
+        boolean servicioTI = getJsonBool(body, "servicioTI");
 
         if (idUsuario <= 0 || idEspacio <= 0) {
             throw new IllegalArgumentException("Debe seleccionar un usuario y un espacio válidos.");
@@ -254,7 +256,7 @@ public class ApiHandler implements HttpHandler {
             throw new IllegalArgumentException("El motivo o nombre del evento es obligatorio.");
         }
 
-        Reserva r = dataStore.updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, obs, servicioMedico);
+        Reserva r = dataStore.updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, obs, servicioMedico, servicioTI);
         sendJsonResponse(exchange, 200, r.toJson());
     }
 
