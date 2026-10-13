@@ -10,6 +10,7 @@ import com.universidad.espacios.service.DataStore;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,6 +66,8 @@ public class ApiHandler implements HttpHandler {
                 handleDeleteReserva(exchange, path);
             } else if (path.equals("/api/check-conflicto") && method.equals("GET")) {
                 handleCheckConflicto(exchange, params);
+            } else if (path.equals("/api/upload") && method.equals("POST")) {
+                handlePostUpload(exchange);
             } else {
                 sendJsonResponse(exchange, 404, "{\"error\":\"Ruta no encontrada: " + path + "\"}");
             }
@@ -217,6 +220,8 @@ public class ApiHandler implements HttpHandler {
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
         boolean servicioTI = getJsonBool(body, "servicioTI");
+        String archivoLayout = getJsonString(body, "archivoLayout");
+        String archivoLayoutNombre = getJsonString(body, "archivoLayoutNombre");
 
         if (idUsuario <= 0 || idEspacio <= 0) {
             throw new IllegalArgumentException("Debe seleccionar un usuario y un espacio válidos.");
@@ -228,7 +233,8 @@ public class ApiHandler implements HttpHandler {
             throw new IllegalArgumentException("El motivo o nombre del evento es obligatorio.");
         }
 
-        Reserva r = dataStore.addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, obs, servicioMedico, servicioTI);
+        Reserva r = dataStore.addReserva(idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, obs, 
+                                        servicioMedico, servicioTI, archivoLayout, archivoLayoutNombre);
         sendJsonResponse(exchange, 201, r.toJson());
     }
 
@@ -245,6 +251,8 @@ public class ApiHandler implements HttpHandler {
         String obs = getJsonString(body, "observaciones");
         boolean servicioMedico = getJsonBool(body, "servicioMedico");
         boolean servicioTI = getJsonBool(body, "servicioTI");
+        String archivoLayout = getJsonString(body, "archivoLayout");
+        String archivoLayoutNombre = getJsonString(body, "archivoLayoutNombre");
 
         if (idUsuario <= 0 || idEspacio <= 0) {
             throw new IllegalArgumentException("Debe seleccionar un usuario y un espacio válidos.");
@@ -256,8 +264,63 @@ public class ApiHandler implements HttpHandler {
             throw new IllegalArgumentException("El motivo o nombre del evento es obligatorio.");
         }
 
-        Reserva r = dataStore.updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, obs, servicioMedico, servicioTI);
+        Reserva r = dataStore.updateReserva(id, idUsuario, idEspacio, fecha, horaInicio, horaFin, motivo, estado, obs, 
+                                           servicioMedico, servicioTI, archivoLayout, archivoLayoutNombre);
         sendJsonResponse(exchange, 200, r.toJson());
+    }
+
+    private void handlePostUpload(HttpExchange exchange) throws Exception {
+        String body = readBody(exchange);
+        String fileName = getJsonString(body, "fileName");
+        String fileData = getJsonString(body, "fileData");
+
+        if (fileName.isEmpty() || fileData.isEmpty()) {
+            throw new IllegalArgumentException("Nombre de archivo y datos son requeridos.");
+        }
+
+        int commaIdx = fileData.indexOf(",");
+        String base64Content = (commaIdx != -1) ? fileData.substring(commaIdx + 1) : fileData;
+
+        byte[] fileBytes;
+        try {
+            fileBytes = Base64.getDecoder().decode(base64Content.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Formato de archivo inválido (debe ser Base64).");
+        }
+
+        // Validación estricta de tamaño máximo: 10 MB (10 * 1024 * 1024 bytes)
+        if (fileBytes.length > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("El archivo excede el tamaño máximo permitido de 10 MB (" + 
+                String.format(Locale.US, "%.2f", fileBytes.length / (1024.0 * 1024.0)) + " MB).");
+        }
+
+        // Ubicar carpeta uploads dentro de frontend
+        File frontendDir = new File("frontend");
+        if (!frontendDir.exists()) frontendDir = new File("../frontend");
+        File uploadsDir = new File(frontendDir, "uploads");
+        if (!uploadsDir.exists()) uploadsDir.mkdirs();
+
+        // Sanitizar nombre de archivo
+        String cleanOriginalName = new File(fileName).getName();
+        String safeExt = "";
+        int dot = cleanOriginalName.lastIndexOf(".");
+        if (dot != -1) {
+            safeExt = cleanOriginalName.substring(dot).replaceAll("[^a-zA-Z0-9._-]", "");
+        }
+        String safeBase = (dot != -1 ? cleanOriginalName.substring(0, dot) : cleanOriginalName)
+                            .replaceAll("[^a-zA-Z0-9_-]", "_");
+        if (safeBase.length() > 50) safeBase = safeBase.substring(0, 50);
+
+        String uniqueFileName = "layout_" + System.currentTimeMillis() + "_" + safeBase + safeExt;
+        File destFile = new File(uploadsDir, uniqueFileName);
+
+        Files.write(destFile.toPath(), fileBytes);
+
+        String fileUrl = "uploads/" + uniqueFileName;
+        sendJsonResponse(exchange, 201, String.format(
+            "{\"success\":true,\"url\":\"%s\",\"fileName\":\"%s\",\"size\":%d}",
+            escape(fileUrl), escape(cleanOriginalName), fileBytes.length
+        ));
     }
 
     private void handlePutEstadoReserva(HttpExchange exchange, String path) throws Exception {

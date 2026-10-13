@@ -65,6 +65,8 @@ CREATE TABLE Reservas (
     servicio_medico TINYINT(1) DEFAULT 0,
     servicio_ti TINYINT(1) DEFAULT 0,
     observaciones TEXT NULL,
+    archivo_layout VARCHAR(500) NULL,
+    archivo_layout_nombre VARCHAR(255) NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Restricciones de integridad referencial

@@ -127,8 +127,16 @@ public class Main {
             if (name.endsWith(".svg")) return "image/svg+xml";
             if (name.endsWith(".png")) return "image/png";
             if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+            if (name.endsWith(".webp")) return "image/webp";
             if (name.endsWith(".ico")) return "image/x-icon";
-            return "text/plain; charset=UTF-8";
+            if (name.endsWith(".pdf")) return "application/pdf";
+            if (name.endsWith(".doc")) return "application/msword";
+            if (name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            if (name.endsWith(".xls")) return "application/vnd.ms-excel";
+            if (name.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            if (name.endsWith(".zip")) return "application/zip";
+            if (name.endsWith(".dwg")) return "application/acad";
+            return "application/octet-stream";
         }
     }
 }

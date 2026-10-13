@@ -696,6 +696,47 @@
                     </div>
                 </div>
 
+                <!-- APARTADO DE ARCHIVO DE LAYOUT / CROQUIS -->
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="reservaLayoutFile" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span><i class="ph-bold ph-file-arrow-up"></i> Archivo de Layout o Croquis <span style="font-weight: 400; color: #64748b; font-size: 0.85rem;">(Opcional)</span></span>
+                            <span style="font-size: 0.78rem; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-weight: 500;">
+                                <i class="ph-bold ph-hard-drive"></i> Máx. 10 MB
+                            </span>
+                        </label>
+                        <div class="file-upload-box" id="layoutDropZone" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 1.15rem 1rem; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s ease;">
+                            <input type="file" id="reservaLayoutFile" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.dwg,.zip">
+                            <div id="layoutUploadPrompt">
+                                <i class="ph-bold ph-cloud-arrow-up" style="font-size: 2.2rem; color: var(--tecmilenio-green); margin-bottom: 4px; display: block;"></i>
+                                <span style="font-weight: 600; color: #1e293b; font-size: 0.95rem;">Haga clic para subir o arrastre su archivo aquí</span>
+                                <p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">Planos de acomodo, croquis, layouts o especificaciones (PDF, PNG, JPG, Word, Excel, DWG - Máx. 10MB)</p>
+                            </div>
+                            <div id="layoutFilePreview" style="display: none; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 0.9rem; margin-top: 4px;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden; text-align: left;">
+                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: var(--tecmilenio-green); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                                        <i class="ph-bold ph-file-text"></i>
+                                    </div>
+                                    <div style="overflow: hidden;">
+                                        <div id="layoutFileName" style="font-weight: 600; font-size: 0.88rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                                        <div id="layoutFileSize" style="font-size: 0.75rem; color: #64748b;"></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                                    <a id="btnVerLayoutActual" href="#" target="_blank" class="btn-icon" title="Ver / Descargar archivo" style="display: none; color: #0284c7; background: #e0f2fe; width: 30px; height: 30px; border-radius: 6px; text-decoration: none;">
+                                        <i class="ph-bold ph-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn-icon" id="btnQuitarLayout" title="Quitar archivo adjunto" style="color: #ef4444; background: #fee2e2; width: 30px; height: 30px; border-radius: 6px;">
+                                        <i class="ph-bold ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="reservaLayoutUrl" value="">
+                        <input type="hidden" id="reservaLayoutNombre" value="">
+                    </div>
+                </div>
+
                 <div class="form-row" id="rowReservaEstado" style="display: none;">
                     <div class="form-group col-12">
                         <label for="reservaEstado"><i class="ph-bold ph-tag"></i> Estado de la Reserva</label>
@@ -862,6 +903,10 @@
                 <div style="display: flex; justify-content: space-between;" id="exitoRowServicioTI">
                     <span style="color: #64748b;"><i class="ph-bold ph-laptop"></i> Soporte de TI:</span>
                     <strong id="exitoServicioTI" style="color: #2563eb;">-</strong>
+                </div>
+                <div style="display: none; justify-content: space-between; margin-top: 8px;" id="exitoRowLayout">
+                    <span style="color: #64748b;"><i class="ph-bold ph-file-arrow-up"></i> Layout Adjunto:</span>
+                    <a id="exitoLayoutLink" href="#" target="_blank" style="color: #0284c7; font-weight: 600; text-decoration: none; max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</a>
                 </div>
             </div>
 

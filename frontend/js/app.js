@@ -271,6 +271,7 @@ function renderDashboard() {
                         <strong>${escapeHtml(r.motivoEvento)}</strong>
                         ${r.servicioMedico ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-first-aid"></i> Servicio Médico</span>` : ''}
                         ${r.servicioTI ? `<span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;"><i class="ph-bold ph-laptop"></i> Soporte TI</span>` : ''}
+                        ${r.archivoLayout ? `<a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:1px 6px;border-radius:10px;font-size:0.7rem;margin-left:6px;text-decoration:none;" title="Ver archivo de layout adjunto: ${escapeHtml(r.archivoLayoutNombre || '')}"><i class="ph-bold ph-file-arrow-up"></i> Layout</a>` : ''}
                         ${profNombre ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(profNombre)}</div>` : ''}
                     </td>
                     <td>
@@ -433,6 +434,7 @@ function renderAgenda() {
                 <strong>${escapeHtml(r.motivoEvento)}</strong>
                 ${r.servicioMedico ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-first-aid"></i> Servicio Médico Requerido</span></div>` : ''}
                 ${r.servicioTI ? `<div style="margin-top:3px;"><span class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;"><i class="ph-bold ph-laptop"></i> Soporte TI Requerido</span></div>` : ''}
+                ${r.archivoLayout ? `<div style="margin-top:3px;"><a href="${r.archivoLayout}" target="_blank" class="badge-status" style="display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;padding:2px 7px;border-radius:10px;font-size:0.72rem;font-weight:600;text-decoration:none;" title="Abrir archivo adjunto"><i class="ph-bold ph-paperclip"></i> Layout: ${escapeHtml(r.archivoLayoutNombre || 'Ver archivo')}</a></div>` : ''}
                 ${docenteNombre ? `<div style="font-size:0.75rem;color:var(--tecmilenio-green);font-weight:600;margin-top:2px;"><i class="ph-bold ph-chalkboard-teacher"></i> Docente: ${escapeHtml(docenteNombre)}</div>` : ''}
             </td>
             <td>
@@ -1025,6 +1027,8 @@ function abrirModalNuevaReserva() {
     const chkTI = document.getElementById('reservaServicioTI');
     if (chkTI) chkTI.checked = false;
 
+    resetLayoutUploadUI();
+
     const rowEstado = document.getElementById('rowReservaEstado');
     if (rowEstado) rowEstado.style.display = 'none';
 
@@ -1059,6 +1063,9 @@ function abrirEditarReserva(idReserva) {
     if (chkMed) chkMed.checked = !!r.servicioMedico;
     const chkTI = document.getElementById('reservaServicioTI');
     if (chkTI) chkTI.checked = !!r.servicioTI;
+
+    // Cargar archivo de layout si existe
+    cargarLayoutEnEdicion(r);
 
     const rowEstado = document.getElementById('rowReservaEstado');
     if (rowEstado) {
@@ -1269,6 +1276,39 @@ async function handleReservaSubmit() {
     const chkTI = document.getElementById('reservaServicioTI');
     const servicioTI = chkTI ? chkTI.checked : false;
 
+    // Subida y procesamiento de archivo de layout (máx 10 MB)
+    let finalLayoutUrl = document.getElementById('reservaLayoutUrl') ? document.getElementById('reservaLayoutUrl').value : '';
+    let finalLayoutNombre = document.getElementById('reservaLayoutNombre') ? document.getElementById('reservaLayoutNombre').value : '';
+
+    if (pendingLayoutFile && pendingLayoutBase64) {
+        if (state.backendConnected) {
+            try {
+                const upRes = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: pendingLayoutFile.name,
+                        fileData: pendingLayoutBase64
+                    })
+                });
+                if (upRes.ok) {
+                    const upData = await upRes.json();
+                    finalLayoutUrl = upData.url;
+                    finalLayoutNombre = upData.fileName || pendingLayoutFile.name;
+                } else {
+                    const upErr = await upRes.json();
+                    throw new Error(upErr.error || 'Error al procesar el archivo de layout');
+                }
+            } catch (upEx) {
+                showToast(upEx.message, 'error');
+                return;
+            }
+        } else {
+            finalLayoutUrl = pendingLayoutBase64;
+            finalLayoutNombre = pendingLayoutFile.name;
+        }
+    }
+
     const payload = {
         idUsuario: idUsuario,
         idEspacio: idEspacio,
@@ -1278,7 +1318,9 @@ async function handleReservaSubmit() {
         motivoEvento: document.getElementById('reservaMotivo').value.trim(),
         observaciones: obs,
         servicioMedico: servicioMedico,
-        servicioTI: servicioTI
+        servicioTI: servicioTI,
+        archivoLayout: finalLayoutUrl,
+        archivoLayoutNombre: finalLayoutNombre
     };
 
     if (editId) {
@@ -1553,6 +1595,156 @@ function setupSearchAndFilters() {
 
     const aldeaDateSel = document.getElementById('aldeaDateSelector');
     if (aldeaDateSel) aldeaDateSel.onchange = renderAldeaView;
+
+    // Inicializar subida de archivos de layout
+    initLayoutUpload();
+}
+
+// ====================================================================
+// GESTIÓN DE SUBIDA DE ARCHIVOS DE LAYOUT (MÁXIMO 10 MB)
+// ====================================================================
+let pendingLayoutFile = null;
+let pendingLayoutBase64 = null;
+
+function initLayoutUpload() {
+    const dropZone = document.getElementById('layoutDropZone');
+    const fileInput = document.getElementById('reservaLayoutFile');
+    const promptBox = document.getElementById('layoutUploadPrompt');
+    const previewBox = document.getElementById('layoutFilePreview');
+    const fileNameEl = document.getElementById('layoutFileName');
+    const fileSizeEl = document.getElementById('layoutFileSize');
+    const btnQuitar = document.getElementById('btnQuitarLayout');
+    const btnVerActual = document.getElementById('btnVerLayoutActual');
+    const urlHidden = document.getElementById('reservaLayoutUrl');
+    const nombreHidden = document.getElementById('reservaLayoutNombre');
+
+    if (!dropZone || !fileInput) return;
+
+    // Clic en la zona activa el input file
+    dropZone.onclick = (e) => {
+        if (e.target.closest('#btnQuitarLayout') || e.target.closest('#btnVerLayoutActual')) return;
+        fileInput.click();
+    };
+
+    // Drag and Drop
+    dropZone.ondragover = (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--tecmilenio-green)';
+        dropZone.style.background = '#f0fdf4';
+    };
+
+    dropZone.ondragleave = (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        dropZone.style.background = '#f8fafc';
+    };
+
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        dropZone.style.background = '#f8fafc';
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFileSelected(e.dataTransfer.files[0]);
+        }
+    };
+
+    // Selección por explorador de archivos
+    fileInput.onchange = () => {
+        if (fileInput.files && fileInput.files.length > 0) {
+            handleFileSelected(fileInput.files[0]);
+        }
+    };
+
+    // Botón quitar archivo
+    if (btnQuitar) {
+        btnQuitar.onclick = (e) => {
+            e.stopPropagation();
+            resetLayoutUploadUI();
+            showToast('Archivo de layout removido.', 'info');
+        };
+    }
+
+    function handleFileSelected(file) {
+        const MAX_BYTES = 10 * 1024 * 1024; // 10 MB exactos
+        if (file.size > MAX_BYTES) {
+            showToast(`El archivo "${file.name}" pesa ${(file.size / (1024 * 1024)).toFixed(2)} MB, superando el límite máximo permitido de 10 MB.`, 'error');
+            fileInput.value = '';
+            return;
+        }
+
+        pendingLayoutFile = file;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            pendingLayoutBase64 = ev.target.result;
+            if (urlHidden) urlHidden.value = ''; // Se creará la URL en el servidor al enviar
+            if (nombreHidden) nombreHidden.value = file.name;
+
+            if (fileNameEl) fileNameEl.textContent = file.name;
+            if (fileSizeEl) fileSizeEl.textContent = formatBytes(file.size);
+            if (btnVerActual) btnVerActual.style.display = 'none';
+
+            if (promptBox) promptBox.style.display = 'none';
+            if (previewBox) previewBox.style.display = 'flex';
+            showToast(`Archivo "${file.name}" cargado (${formatBytes(file.size)}).`, 'success');
+        };
+        reader.onerror = () => {
+            showToast('No se pudo leer el archivo seleccionado.', 'error');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function resetLayoutUploadUI() {
+    pendingLayoutFile = null;
+    pendingLayoutBase64 = null;
+    const fileInput = document.getElementById('reservaLayoutFile');
+    if (fileInput) fileInput.value = '';
+    const urlHidden = document.getElementById('reservaLayoutUrl');
+    if (urlHidden) urlHidden.value = '';
+    const nombreHidden = document.getElementById('reservaLayoutNombre');
+    if (nombreHidden) nombreHidden.value = '';
+
+    const promptBox = document.getElementById('layoutUploadPrompt');
+    const previewBox = document.getElementById('layoutFilePreview');
+    const btnVerActual = document.getElementById('btnVerLayoutActual');
+    if (promptBox) promptBox.style.display = 'block';
+    if (previewBox) previewBox.style.display = 'none';
+    if (btnVerActual) btnVerActual.style.display = 'none';
+}
+
+function cargarLayoutEnEdicion(r) {
+    pendingLayoutFile = null;
+    pendingLayoutBase64 = null;
+    const urlHidden = document.getElementById('reservaLayoutUrl');
+    const nombreHidden = document.getElementById('reservaLayoutNombre');
+    const promptBox = document.getElementById('layoutUploadPrompt');
+    const previewBox = document.getElementById('layoutFilePreview');
+    const fileNameEl = document.getElementById('layoutFileName');
+    const fileSizeEl = document.getElementById('layoutFileSize');
+    const btnVerActual = document.getElementById('btnVerLayoutActual');
+
+    if (r && r.archivoLayout) {
+        if (urlHidden) urlHidden.value = r.archivoLayout;
+        if (nombreHidden) nombreHidden.value = r.archivoLayoutNombre || '';
+        if (fileNameEl) fileNameEl.textContent = r.archivoLayoutNombre || 'Archivo de Layout adjunto';
+        if (fileSizeEl) fileSizeEl.textContent = 'Archivo adjunto guardado';
+        if (btnVerActual) {
+            btnVerActual.href = r.archivoLayout;
+            btnVerActual.style.display = 'inline-flex';
+        }
+        if (promptBox) promptBox.style.display = 'none';
+        if (previewBox) previewBox.style.display = 'flex';
+    } else {
+        resetLayoutUploadUI();
+    }
+}
+
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // ====================================================================
@@ -1760,6 +1952,7 @@ function exportarReservasCsv() {
         'Estado',
         'Servicio Medico',
         'Soporte TI',
+        'Archivo Layout',
         'Observaciones'
     ];
 
@@ -1781,6 +1974,7 @@ function exportarReservasCsv() {
             r.estadoReserva,
             r.servicioMedico ? '"SI"' : '"NO"',
             r.servicioTI ? '"SI"' : '"NO"',
+            r.archivoLayout ? `"${(r.archivoLayoutNombre || r.archivoLayout).replace(/"/g, '""')}"` : '""',
             `"${(r.observaciones || '').replace(/"/g, '""')}"`
         ];
     });
@@ -1828,6 +2022,18 @@ function mostrarModalExitoReserva(idReserva) {
     if (elTI) {
         elTI.textContent = r.servicioTI ? '💻 SÍ REQUERIDO' : 'No requerido';
         elTI.style.color = r.servicioTI ? '#2563eb' : '#64748b';
+    }
+
+    const rowLay = document.getElementById('exitoRowLayout');
+    const linkLay = document.getElementById('exitoLayoutLink');
+    if (rowLay && linkLay) {
+        if (r.archivoLayout) {
+            rowLay.style.display = 'flex';
+            linkLay.href = r.archivoLayout;
+            linkLay.textContent = '📎 ' + (r.archivoLayoutNombre || 'Ver Archivo');
+        } else {
+            rowLay.style.display = 'none';
+        }
     }
 
     const btnWord = document.getElementById('btnDescargarWordModal');
@@ -2071,6 +2277,10 @@ function descargarReporteWord(idReserva) {
                 <th>Observaciones / Acomodo:</th>
                 <td>${escapeHtml(r.observaciones || 'Sin especificaciones extraordinarias.')}</td>
             </tr>
+            <tr>
+                <th>Archivo de Layout / Croquis:</th>
+                <td>${r.archivoLayout ? `📎 <strong>${escapeHtml(r.archivoLayoutNombre || 'Layout Adjunto')}</strong> (<a href="${r.archivoLayout}" target="_blank">${r.archivoLayout}</a>)` : 'No se adjuntó archivo de layout para este evento.'}</td>
+            </tr>
         </table>
 
         <div class="section-title">4. Responsable de la Solicitud</div>
@@ -2162,6 +2372,7 @@ function descargarReporteExcelIndividual(idReserva) {
         ['Estado de la Reserva', r.estadoReserva],
         ['Servicio Médico Requerido', r.servicioMedico ? 'SÍ REQUERIDO' : 'NO'],
         ['Soporte de TI Requerido', r.servicioTI ? 'SÍ REQUERIDO' : 'NO'],
+        ['Archivo de Layout Adjunto', r.archivoLayout ? `${r.archivoLayoutNombre || 'Layout'} (${r.archivoLayout})` : 'NO'],
         ['Responsable Solicitante', r.nombreUsuario || 'Responsable'],
         ['Rol del Solicitante', r.rolUsuario || 'Colaborador'],
         ['Correo Institucional', r.correoUsuario || 'N/A'],

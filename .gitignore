@@ -9,3 +9,7 @@ backend/bin/
 *.iml
 *.log
 appespacios
+
+# Archivos subidos por usuarios (Layouts)
+frontend/uploads/*
+!frontend/uploads/.gitkeep

@@ -12,6 +12,8 @@ public class Reserva {
     private String observaciones;
     private boolean servicioMedico;
     private boolean servicioTI;
+    private String archivoLayout;
+    private String archivoLayoutNombre;
 
     // Campos enriquecidos para la vista/API
     private String nombreUsuario;
@@ -108,6 +110,12 @@ public class Reserva {
     public boolean isServicioTI() { return servicioTI; }
     public void setServicioTI(boolean servicioTI) { this.servicioTI = servicioTI; }
 
+    public String getArchivoLayout() { return archivoLayout; }
+    public void setArchivoLayout(String archivoLayout) { this.archivoLayout = archivoLayout; }
+
+    public String getArchivoLayoutNombre() { return archivoLayoutNombre; }
+    public void setArchivoLayoutNombre(String archivoLayoutNombre) { this.archivoLayoutNombre = archivoLayoutNombre; }
+
     public String toJson() {
         return String.format(
             "{" +
@@ -121,6 +129,8 @@ public class Reserva {
             "\"estadoReserva\":\"%s\"," +
             "\"servicioMedico\":%b," +
             "\"servicioTI\":%b," +
+            "\"archivoLayout\":\"%s\"," +
+            "\"archivoLayoutNombre\":\"%s\"," +
             "\"observaciones\":\"%s\"," +
             "\"nombreUsuario\":\"%s\"," +
             "\"correoUsuario\":\"%s\"," +
@@ -140,6 +150,8 @@ public class Reserva {
             escapeJson(estadoReserva),
             servicioMedico,
             servicioTI,
+            escapeJson(archivoLayout != null ? archivoLayout : ""),
+            escapeJson(archivoLayoutNombre != null ? archivoLayoutNombre : ""),
             escapeJson(observaciones),
             escapeJson(nombreUsuario),
             escapeJson(correoUsuario),
