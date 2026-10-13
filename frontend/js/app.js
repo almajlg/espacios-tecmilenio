@@ -872,11 +872,11 @@ function populateSelects() {
 
         const grupos = [
             {
-                label: '🏢 Edificio 1 (Preparatoria: 1102 - 1310)',
+                label: '🏢 Edificio 1 (Preparatoria: 1101 - 1310)',
                 filter: isEdificio1
             },
             {
-                label: '🏛️ Edificio 2 (Profesional: 2201 - 2405)',
+                label: '🏛️ Edificio 2 (Profesional: 2201 - 3109)',
                 filter: isEdificio2
             },
             {
