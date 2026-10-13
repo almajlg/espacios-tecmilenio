@@ -978,26 +978,41 @@ function setupModals() {
         };
     }
 
-    // Al cambiar espacio en el select de reservas, ajustar capacidad sugerida
+    // Al cambiar espacio en el select de reservas, ajustar capacidad sugerida y mostrar leyenda si corresponde
     const selectEsp = document.getElementById('reservaEspacio');
     if (selectEsp) {
         selectEsp.onchange = (e) => {
             const id = parseInt(e.target.value);
             const esp = state.espacios.find(x => x.idEspacio === id);
-            const hint = document.getElementById('espacioHint');
             const capInput = document.getElementById('reservaCapacidad');
-            if (esp) {
-                if (isMezanine(esp)) {
-                    if (hint) hint.innerHTML = `<span style="color:#b91c1c;font-weight:600;"><i class="ph-bold ph-warning"></i> Cubículo Mezanine: Ocupado de lunes a viernes de 7:00 AM a 3:00 PM. Se puede agendar después de las 3:00 PM.</span>`;
-                } else {
-                    if (hint) hint.textContent = `${getEspacioEdificioLabel(esp)} - Capacidad sugerida: ${esp.capacidad} personas`;
-                }
-                if (capInput && !capInput.value) capInput.value = esp.capacidad;
-            } else {
-                if (hint) hint.textContent = '';
+            
+            updateEspacioHint(id);
+
+            if (esp && capInput && !capInput.value) {
+                capInput.value = esp.capacidad;
             }
             checkConflictNow();
         };
+    }
+}
+
+function updateEspacioHint(idEspacio) {
+    const hint = document.getElementById('espacioHint');
+    if (!hint) return;
+    const id = parseInt(idEspacio);
+    if (!id) {
+        hint.innerHTML = '';
+        return;
+    }
+    const esp = state.espacios.find(x => x.idEspacio === id);
+    if (!esp) {
+        hint.innerHTML = '';
+        return;
+    }
+    if (isMezanine(esp)) {
+        hint.innerHTML = `<span style="color:#b91c1c;font-weight:600;"><i class="ph-bold ph-warning"></i> Cubículo Mezanine: Ocupado de lunes a viernes de 7:00 AM a 3:00 PM. Se puede agendar después de las 3:00 PM.</span>`;
+    } else {
+        hint.textContent = `${getEspacioEdificioLabel(esp)} - Capacidad sugerida: ${esp.capacidad} personas`;
     }
 }
 
@@ -1022,6 +1037,14 @@ function abrirModalNuevaReserva() {
     document.getElementById('formReserva').reset();
     document.getElementById('reservaEditId').value = '';
     
+    // Limpiar explícitamente espacioHint para que nunca aparezca la leyenda de Mezanine por defecto
+    const hint = document.getElementById('espacioHint');
+    if (hint) hint.innerHTML = '';
+
+    // Asegurar que el select no tenga espacio seleccionado por defecto
+    const selectEsp = document.getElementById('reservaEspacio');
+    if (selectEsp) selectEsp.value = '';
+
     const chkMed = document.getElementById('reservaServicioMedico');
     if (chkMed) chkMed.checked = false;
     const chkTI = document.getElementById('reservaServicioTI');
@@ -1040,6 +1063,10 @@ function abrirModalNuevaReserva() {
     document.getElementById('reservaHoraInicio').value = '10:00';
     document.getElementById('reservaHoraFin').value = '11:30';
 
+    // Ocultar cualquier alerta de conflicto anterior
+    const alertBox = document.getElementById('conflictAlertBox');
+    if (alertBox) alertBox.style.display = 'none';
+
     openModal('modalReserva');
     checkConflictNow();
 }
@@ -1051,7 +1078,13 @@ function abrirEditarReserva(idReserva) {
     document.getElementById('modalReservaTitle').textContent = `Editar Reserva #${r.idReserva}`;
     document.getElementById('reservaEditId').value = r.idReserva;
     document.getElementById('reservaUsuario').value = r.idUsuario;
-    document.getElementById('reservaEspacio').value = r.idEspacio;
+    
+    const selectEsp = document.getElementById('reservaEspacio');
+    if (selectEsp) {
+        selectEsp.value = r.idEspacio;
+        updateEspacioHint(r.idEspacio);
+    }
+    
     document.getElementById('reservaCapacidad').value = r.capacidadRequerida || 30;
     document.getElementById('reservaFecha').value = r.fechaReserva;
     document.getElementById('reservaHoraInicio').value = r.horaInicio;
