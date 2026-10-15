@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchAndFilters();
     setupRealtimeConflictCheck();
     
+    // Autenticación con biblioteca Microsoft MSAL / Verificación de usuario
+    if (typeof initMsalAuth === 'function') {
+        initMsalAuth();
+    }
+
     // Cargar datos del Backend
     loadAllData();
 
@@ -453,20 +458,26 @@ function renderAgenda() {
                     <button class="btn-icon" style="color:#15803d;background:#f0fdf4;width:30px;height:30px;" title="Descargar Ficha Individual en Excel (.csv)" onclick="descargarReporteExcelIndividual(${r.idReserva})">
                         <i class="ph-bold ph-microsoft-excel-logo"></i>
                     </button>
-                    <button class="btn-icon" style="color:var(--tecmilenio-green);width:30px;height:30px;" title="Editar Reserva" onclick="abrirEditarReserva(${r.idReserva})">
-                        <i class="ph-bold ph-pencil-simple"></i>
-                    </button>
-                    ${r.estadoReserva === 'Activa' ? `
-                        <button class="btn-icon" style="color:#005934;width:30px;height:30px;" title="Marcar como Completada" onclick="cambiarEstadoReserva(${r.idReserva}, 'Completada')">
-                            <i class="ph-bold ph-check"></i>
+                    ${puedeAgendarModificar(window.getAuthUser ? window.getAuthUser() : null) ? `
+                        <button class="btn-icon" style="color:var(--tecmilenio-green);width:30px;height:30px;" title="Editar Reserva (Solo Coordinador o Mentor)" onclick="abrirEditarReserva(${r.idReserva})">
+                            <i class="ph-bold ph-pencil-simple"></i>
                         </button>
-                        <button class="btn-icon" style="color:var(--danger);width:30px;height:30px;" title="Cancelar Reserva" onclick="cambiarEstadoReserva(${r.idReserva}, 'Cancelada')">
-                            <i class="ph-bold ph-x"></i>
+                        ${r.estadoReserva === 'Activa' ? `
+                            <button class="btn-icon" style="color:#005934;width:30px;height:30px;" title="Marcar como Completada" onclick="cambiarEstadoReserva(${r.idReserva}, 'Completada')">
+                                <i class="ph-bold ph-check"></i>
+                            </button>
+                            <button class="btn-icon" style="color:var(--danger);width:30px;height:30px;" title="Cancelar Reserva" onclick="cambiarEstadoReserva(${r.idReserva}, 'Cancelada')">
+                                <i class="ph-bold ph-x"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn-icon" style="color:var(--text-muted);width:30px;height:30px;" title="Eliminar del Registro" onclick="eliminarReserva(${r.idReserva})">
+                            <i class="ph-bold ph-trash"></i>
                         </button>
-                    ` : ''}
-                    <button class="btn-icon" style="color:var(--text-muted);width:30px;height:30px;" title="Eliminar del Registro" onclick="eliminarReserva(${r.idReserva})">
-                        <i class="ph-bold ph-trash"></i>
-                    </button>
+                    ` : `
+                        <span style="font-size:0.73rem;color:var(--text-muted);background:#f1f5f9;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;" title="Solo Coordinadores y Mentores pueden modificar eventos">
+                            <i class="ph-bold ph-eye"></i> Solo lectura
+                        </span>
+                    `}
                 </div>
             </td>
         `;
@@ -805,8 +816,10 @@ function renderUsuarios() {
 
     state.usuarios.forEach(u => {
         const tr = document.createElement('tr');
-        const puedeAgendar = u.rol !== 'Profesor';
-        const badgeRoleClass = u.rol === 'Administrador' ? 'edificio1' : u.rol === 'Responsable' ? 'edificio2' : u.rol === 'Colaborador' ? 'aldea' : 'otro';
+        const puedeAgendar = puedeAgendarModificar(u);
+        const badgeRoleClass = u.rol === 'Administrador' ? 'edificio1' : 
+                               u.rol === 'Coordinador' ? 'edificio1' : 
+                               u.rol === 'Mentor' ? 'aldea' : 'otro';
 
         tr.innerHTML = `
             <td>#${u.idUsuario}</td>
@@ -819,8 +832,8 @@ function renderUsuarios() {
                         <i class="ph-bold ph-calendar-plus"></i> Agendar como ${escapeHtml(u.nombreCompleto.split(' ')[0])}
                     </button>
                 ` : `
-                    <span style="font-size:0.75rem;color:var(--text-muted);" title="Los profesores requieren un Colaborador o Responsable para agendar">
-                        <i class="ph-bold ph-lock-key"></i> Requiere Colaborador
+                    <span style="font-size:0.75rem;color:var(--text-muted);" title="Solo Coordinadores y Mentores tienen permiso de agendar y modificar">
+                        <i class="ph-bold ph-eye"></i> Solo Visualización
                     </span>
                 `}
             </td>
@@ -830,13 +843,13 @@ function renderUsuarios() {
 }
 
 function populateSelects() {
-    // 1. Select de Responsable / Colaborador (SOLO autorizados para agendar)
+    // 1. Select de Responsable / Coordinador / Mentor (SOLO autorizados para agendar)
     const uSelect = document.getElementById('reservaUsuario');
     if (uSelect) {
         const prevVal = uSelect.value;
-        uSelect.innerHTML = '<option value="">Selecciona al Responsable / Colaborador...</option>';
+        uSelect.innerHTML = '<option value="">Selecciona al Coordinador o Mentor autorizado...</option>';
         
-        const autorizados = state.usuarios.filter(u => u.rol !== 'Profesor');
+        const autorizados = state.usuarios.filter(u => puedeAgendarModificar(u));
         autorizados.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto));
 
         autorizados.forEach(u => {
@@ -845,7 +858,15 @@ function populateSelects() {
             opt.textContent = `${u.nombreCompleto} (${u.rol})`;
             uSelect.appendChild(opt);
         });
-        if (prevVal) uSelect.value = prevVal;
+
+        if (prevVal) {
+            uSelect.value = prevVal;
+        } else if (window.getAuthUser && window.getAuthUser() && window.getAuthUser().idUsuario) {
+            const authUser = window.getAuthUser();
+            if (puedeAgendarModificar(authUser)) {
+                uSelect.value = authUser.idUsuario;
+            }
+        }
     }
 
     // 2. Select de Profesor Asignado a la clase (opcional pero muy útil)
@@ -1035,6 +1056,12 @@ function closeModal(id) {
 }
 
 function abrirModalNuevaReserva() {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: El permiso de agendar un nuevo evento sólo lo tienen los coordinadores y mentores. Los demás pueden solo visualizar.', 'warning');
+        return;
+    }
+
     document.getElementById('modalReservaTitle').textContent = 'Agendar Nuevo Espacio';
     document.getElementById('formReserva').reset();
     document.getElementById('reservaEditId').value = '';
@@ -1067,15 +1094,25 @@ function abrirModalNuevaReserva() {
     document.getElementById('reservaHoraInicio').value = '10:00';
     document.getElementById('reservaHoraFin').value = '11:30';
 
-    // Ocultar cualquier alerta de conflicto anterior
-    const alertBox = document.getElementById('conflictAlertBox');
-    if (alertBox) alertBox.style.display = 'none';
+    // Pre-seleccionar usuario autenticado si es Coordinador o Mentor
+    if (window.getAuthUser && window.getAuthUser() && window.getAuthUser().idUsuario) {
+        const uSelect = document.getElementById('reservaUsuario');
+        if (uSelect && puedeAgendarModificar(window.getAuthUser())) {
+            uSelect.value = window.getAuthUser().idUsuario;
+        }
+    }
 
     openModal('modalReserva');
     checkConflictNow();
 }
 
 function abrirEditarReserva(idReserva) {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Solo los coordinadores y mentores tienen autorización para modificar eventos.', 'warning');
+        return;
+    }
+
     const r = state.reservas.find(x => x.idReserva === idReserva);
     if (!r) return;
 
@@ -1276,14 +1313,20 @@ async function handleReservaSubmit() {
     const idEspacio = parseInt(document.getElementById('reservaEspacio').value);
 
     if (!idUsuario) {
-        showToast('Debes seleccionar al Responsable o Colaborador autorizado para registrar la reserva.', 'warning');
+        showToast('Debes seleccionar al Coordinador o Mentor autorizado para registrar la reserva.', 'warning');
         return;
     }
 
-    // Validar regla de autorización: Los profesores NO pueden agendar por su cuenta
+    // Validar regla de autorización: Solo coordinadores y mentores pueden agendar y modificar
     const usuarioAutorizado = state.usuarios.find(u => u.idUsuario === idUsuario);
-    if (usuarioAutorizado && usuarioAutorizado.rol === 'Profesor') {
-        showToast('Los profesores NO tienen autorización para agendar por su cuenta. Selecciona a un Responsable o Colaborador.', 'error');
+    if (!puedeAgendarModificar(usuarioAutorizado)) {
+        showToast('El permiso de agendar un nuevo evento sólo lo tienen los coordinadores y mentores. Los demás pueden solo visualizar.', 'error');
+        return;
+    }
+
+    const authActivo = window.getAuthUser ? window.getAuthUser() : null;
+    if (authActivo && !puedeAgendarModificar(authActivo)) {
+        showToast('Tu cuenta tiene permiso únicamente de visualización. Solo coordinadores y mentores pueden registrar o modificar eventos.', 'error');
         return;
     }
 
@@ -1502,6 +1545,12 @@ async function handleUsuarioSubmit() {
 }
 
 async function cambiarEstadoReserva(idReserva, nuevoEstado) {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Solo los coordinadores y mentores tienen autorización para modificar o cancelar eventos.', 'warning');
+        return;
+    }
+
     try {
         if (state.backendConnected) {
             const res = await fetch(`${API_BASE}/reservas/${idReserva}/estado`, {
@@ -1523,6 +1572,12 @@ async function cambiarEstadoReserva(idReserva, nuevoEstado) {
 }
 
 async function eliminarReserva(idReserva) {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Solo los coordinadores y mentores tienen autorización para eliminar eventos.', 'warning');
+        return;
+    }
+
     if (!confirm('¿Deseas eliminar este registro de reserva?')) return;
 
     try {

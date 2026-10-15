@@ -68,6 +68,10 @@ public class ApiHandler implements HttpHandler {
                 handleCheckConflicto(exchange, params);
             } else if (path.equals("/api/upload") && method.equals("POST")) {
                 handlePostUpload(exchange);
+            } else if (path.equals("/api/auth/verify") && method.equals("POST")) {
+                handleAuthVerify(exchange);
+            } else if (path.equals("/api/auth/me") && method.equals("GET")) {
+                handleAuthMe(exchange);
             } else {
                 sendJsonResponse(exchange, 404, "{\"error\":\"Ruta no encontrada: " + path + "\"}");
             }
@@ -475,6 +479,77 @@ public class ApiHandler implements HttpHandler {
         if (colonIdx == -1) return false;
         String rest = obj.substring(colonIdx + 1).trim().toLowerCase();
         return rest.startsWith("true");
+    }
+
+    private void handleAuthVerify(HttpExchange exchange) throws Exception {
+        String body = readBody(exchange);
+        String correo = getJsonString(body, "correo");
+        String nombre = getJsonString(body, "nombre");
+        String rol = getJsonString(body, "rol");
+
+        if (correo == null || correo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo del usuario es requerido para verificar la sesión.");
+        }
+
+        correo = correo.trim().toLowerCase();
+        List<com.universidad.espacios.model.Usuario> usuarios = dataStore.getUsuarios();
+        com.universidad.espacios.model.Usuario encontrado = null;
+        for (com.universidad.espacios.model.Usuario u : usuarios) {
+            if (u.getCorreo() != null && u.getCorreo().trim().equalsIgnoreCase(correo)) {
+                encontrado = u;
+                break;
+            }
+        }
+
+        // Si no coincide exacto, intentar por usuario sin dominio (@tecmilenio.mx)
+        if (encontrado == null && correo.contains("@")) {
+            String prefix = correo.split("@")[0].trim().toLowerCase();
+            for (com.universidad.espacios.model.Usuario u : usuarios) {
+                if (u.getCorreo() != null && u.getCorreo().toLowerCase().startsWith(prefix + "@")) {
+                    encontrado = u;
+                    break;
+                }
+            }
+        }
+
+        if (encontrado == null) {
+            // Regla institucional: sólo coordinadores y mentores pueden agendar/modificar; los demás solo visualizar
+            String cLower = correo.toLowerCase();
+            String rolFinal = "Profesor"; // Visualización por defecto
+            if (cLower.contains("admin") || cLower.contains("diana.barrios") || cLower.contains("dabarrios") || cLower.contains("coordinacion")) {
+                rolFinal = "Coordinador";
+            } else if (cLower.contains("mentor")) {
+                rolFinal = "Mentor";
+            }
+            if (rol != null && !rol.trim().isEmpty() && (rol.equalsIgnoreCase("Coordinador") || rol.equalsIgnoreCase("Mentor") || rol.equalsIgnoreCase("Administrador"))) {
+                rolFinal = rol;
+            }
+            String nombreFinal = (nombre != null && !nombre.trim().isEmpty()) ? nombre : correo;
+            encontrado = dataStore.addUsuario(nombreFinal, correo, rolFinal);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"autenticado\":true,");
+        sb.append("\"usuario\":").append(encontrado.toJson()).append(",");
+        sb.append("\"proveedor\":\"Microsoft Authentication Library (MSAL)\"");
+        sb.append("}");
+
+        sendJsonResponse(exchange, 200, sb.toString());
+    }
+
+    private void handleAuthMe(HttpExchange exchange) throws IOException {
+        List<com.universidad.espacios.model.Usuario> usuarios = dataStore.getUsuarios();
+        com.universidad.espacios.model.Usuario admin = usuarios.stream()
+            .filter(u -> "Administrador".equalsIgnoreCase(u.getRol()))
+            .findFirst()
+            .orElse(!usuarios.isEmpty() ? usuarios.get(0) : null);
+
+        if (admin != null) {
+            sendJsonResponse(exchange, 200, "{\"autenticado\":true,\"usuario\":" + admin.toJson() + "}");
+        } else {
+            sendJsonResponse(exchange, 200, "{\"autenticado\":false,\"mensaje\":\"No hay usuario autenticado\"}");
+        }
     }
 
     private String escape(String s) {

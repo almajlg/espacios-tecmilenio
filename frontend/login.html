@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Control de Espacios Tecmilenio</title>
+    <meta name="description" content="Acceso institucional al Sistema de Control y Reserva de Espacios de Universidad Tecmilenio.">
+
+    <!-- Fuentes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Iconos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        /* ESTILOS DE LA PÁGINA DEDICADA DE LOGIN */
+        body.login-page-body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 15% 15%, rgba(104, 193, 67, 0.15) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 85%, rgba(14, 49, 31, 0.12) 0%, transparent 50%),
+                        linear-gradient(135deg, #092014 0%, #0d2e1c 50%, #081a11 100%);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .login-bg-decor {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        .login-bg-decor-1 {
+            background: #68c143;
+            top: -100px;
+            left: -100px;
+        }
+
+        .login-bg-decor-2 {
+            background: #00a4ef;
+            bottom: -120px;
+            right: -120px;
+            opacity: 0.18;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2.75rem 2.25rem 2.25rem;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2);
+            text-align: center;
+            backdrop-filter: blur(16px);
+            animation: fadeInCard 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInCard {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-logo-outside {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.75rem;
+            animation: fadeInLogo 0.5s ease-out;
+        }
+
+        .login-logo-img-outside {
+            max-height: 82px;
+            width: auto;
+            max-width: 90%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .login-logo-img-outside:hover {
+            transform: scale(1.03);
+        }
+
+        @keyframes fadeInLogo {
+            from {
+                opacity: 0;
+                transform: translateY(-14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-system-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eef8ec;
+            color: var(--tecmilenio-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(104, 193, 67, 0.3);
+        }
+
+        .login-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 0.4rem 0;
+            line-height: 1.25;
+        }
+
+        .login-subtitle {
+            font-size: 0.88rem;
+            color: #64748b;
+            margin: 0 0 2rem 0;
+            line-height: 1.45;
+        }
+
+        .btn-microsoft-full {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.85rem;
+            background: #1e293b;
+            color: #ffffff;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-microsoft-full:hover {
+            background: #0f172a;
+            border-color: #475569;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.35);
+        }
+
+        .btn-microsoft-full:active {
+            transform: translateY(0);
+        }
+
+        .login-security-notice {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 1.25rem;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .login-security-notice strong {
+            color: #0f172a;
+        }
+
+        #loginStatusBanner {
+            display: none;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            margin-bottom: 1.25rem;
+            text-align: left;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+
+    <!-- Script rápido de verificación de sesión -->
+    <script>
+        (function() {
+            // Si el usuario ya está autenticado y no viene un token en el hash, redirigir directo a index.html
+            const user = sessionStorage.getItem('tecmilenio_auth_user') || localStorage.getItem('tecmilenio_auth_user');
+            const hasAuthHash = window.location.hash && (window.location.hash.includes('id_token=') || window.location.hash.includes('access_token='));
+            if (user && !hasAuthHash) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+</head>
+
+<body class="login-page-body">
+    <div class="login-bg-decor login-bg-decor-1"></div>
+    <div class="login-bg-decor login-bg-decor-2"></div>
+
+    <div class="login-container">
+        <!-- LOGO TECMILENIO FUERA DEL RECUADRO -->
+        <div class="login-logo-outside">
+            <img src="img/logo-tecmilenio.png" alt="Universidad Tecmilenio" class="login-logo-img-outside">
+        </div>
+
+        <div class="login-card">
+            <div class="login-system-tag">
+                <i class="ph-bold ph-shield-check"></i> Acceso Seguro Institucional
+            </div>
+
+            <h1 class="login-title">Control de Espacios</h1>
+            <p class="login-subtitle">Campus Cuautitlán Izcalli • Inicia sesión con tu cuenta institucional para gestionar y agendar salones, laboratorios y auditorios.</p>
+
+            <!-- BANNER DE ESTADO / REDIRECCIÓN -->
+            <div id="loginStatusBanner"></div>
+
+            <!-- BOTÓN PRINCIPAL: LOGIN CON MICROSOFT -->
+            <button type="button" class="btn-microsoft-full" id="btnMicrosoftLogin" onclick="loginDesdePagina()">
+                <svg width="22" height="22" viewBox="0 0 21 21" style="flex-shrink: 0;">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                <span>Iniciar sesión con cuenta Microsoft</span>
+            </button>
+
+            <div class="login-security-notice" style="margin-top: 1.5rem;">
+                <i class="ph-bold ph-shield-check" style="color: var(--tecmilenio-green); font-size: 1.15rem;"></i>
+                <span>Acceso validado automáticamente con Microsoft <strong>@tecmilenio.mx</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST DE NOTIFICACIONES -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+    <script src="js/msal-auth.js"></script>
+
+    <script>
+        function showBanner(msg, type = 'info') {
+            const b = document.getElementById('loginStatusBanner');
+            if (!b) return;
+            b.style.display = 'flex';
+            if (type === 'success') {
+                b.style.background = '#dcfce7';
+                b.style.color = '#15803d';
+                b.style.border = '1px solid #86efac';
+                b.innerHTML = `<i class="ph-bold ph-check-circle" style="font-size:1.1rem;"></i> <span>${msg}</span>`;
+            } else if (type === 'error') {
+                b.style.background = '#fee2e2';
+                b.style.color = '#b91c1c';
+                b.style.border = '1px solid #fca5a5';
+                b.innerHTML = `<i class="ph-bold ph-warning-circle" style="font-size:1.1rem;"></i> <span>${msg}</span>`;
+            } else {
+                b.style.background = '#e0f2fe';
+                b.style.color = '#0369a1';
+                b.style.border = '1px solid #7dd3fc';
+                b.innerHTML = `<i class="ph-bold ph-spinner ph-spin" style="font-size:1.1rem;"></i> <span>${msg}</span>`;
+            }
+        }
+
+        // Iniciar sesión con Microsoft y redirigir
+        async function loginDesdePagina() {
+            showBanner('Conectando con Microsoft Identity Platform...', 'info');
+            try {
+                await loginConMicrosoft();
+                const user = window.getAuthUser ? window.getAuthUser() : null;
+                if (user) {
+                    showBanner(`¡Bienvenido, ${user.nombre}! Redirigiendo a la app de espacios...`, 'success');
+                    setTimeout(() => {
+                        window.location.replace('index.html');
+                    }, 500);
+                }
+            } catch (err) {
+                showBanner(err.message || 'Error al iniciar sesión con Microsoft.', 'error');
+            }
+        }
+
+        // Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof initMsalAuth === 'function') {
+                await initMsalAuth();
+            }
+
+            // Si se acaba de autenticar (por ejemplo por redirect o hash)
+            const user = window.getAuthUser ? window.getAuthUser() : null;
+            if (user) {
+                showBanner(`Sesión verificada: ${user.nombre}. Redirigiendo...`, 'success');
+                setTimeout(() => {
+                    window.location.replace('index.html');
+                }, 400);
+            }
+        });
+    </script>
+</body>
+
+</html>

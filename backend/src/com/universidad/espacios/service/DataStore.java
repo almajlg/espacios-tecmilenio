@@ -51,6 +51,12 @@ public class DataStore {
         return u;
     }
 
+    public static boolean puedeAgendarOModificar(Usuario u) {
+        if (u == null) return false;
+        String rol = u.getRol() == null ? "" : u.getRol().toLowerCase().trim();
+        return rol.contains("coordinador") || rol.contains("mentor") || rol.contains("admin");
+    }
+
     // ================================================================
     // GESTIÓN DE ESPACIOS
     // ================================================================
@@ -173,8 +179,8 @@ public class DataStore {
                                           String archivoLayout, String archivoLayoutNombre) throws Exception {
         Usuario u = usuarios.get(idUsuario);
         if (u == null) throw new IllegalArgumentException("Usuario no encontrado (ID: " + idUsuario + ")");
-        if ("Profesor".equalsIgnoreCase(u.getRol())) {
-            throw new IllegalStateException("Los profesores no tienen autorización para agendar por su cuenta. La reserva debe ser registrada por un Responsable o Colaborador.");
+        if (!puedeAgendarOModificar(u)) {
+            throw new IllegalStateException("El permiso de agendar un nuevo evento sólo lo tienen los coordinadores y mentores. Los demás pueden solo visualizar.");
         }
 
         Espacio e = espacios.get(idEspacio);
@@ -299,8 +305,8 @@ public class DataStore {
 
         Usuario u = usuarios.get(idUsuario);
         if (u == null) throw new IllegalArgumentException("Usuario no encontrado (ID: " + idUsuario + ")");
-        if ("Profesor".equalsIgnoreCase(u.getRol())) {
-            throw new IllegalStateException("Los profesores no tienen autorización para agendar por su cuenta. La reserva debe ser registrada por un Responsable o Colaborador.");
+        if (!puedeAgendarOModificar(u)) {
+            throw new IllegalStateException("El permiso de agendar y modificar eventos sólo lo tienen los coordinadores y mentores. Los demás pueden solo visualizar.");
         }
 
         Espacio e = espacios.get(idEspacio);

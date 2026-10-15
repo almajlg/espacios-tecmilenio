@@ -19,6 +19,17 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- Verificación obligatoria: si no hay sesión activa, ir primero al Login de Microsoft -->
+    <script>
+        (function() {
+            const user = sessionStorage.getItem('tecmilenio_auth_user') || localStorage.getItem('tecmilenio_auth_user');
+            const hash = window.location.hash || '';
+            if (!user && !hash.includes('id_token=') && !hash.includes('access_token=')) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
 </head>
 
 <body>
@@ -104,6 +115,20 @@
                         <i class="ph-bold ph-plus"></i>
                         <span>Nuevo Espacio</span>
                     </button>
+
+                    <!-- USUARIO AUTENTICADO CON MICROSOFT -->
+                    <div class="header-user-badge" id="headerUserBadge" style="display: none; align-items: center; gap: 0.65rem; background: #ffffff; border: 1px solid var(--border-color); padding: 4px 10px 4px 6px; border-radius: 30px; box-shadow: var(--shadow-sm);">
+                        <div class="user-avatar-circle" id="authUserAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--tecmilenio-dark); color: #ffffff; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                            TM
+                        </div>
+                        <div class="user-meta" style="line-height: 1.15; text-align: left;">
+                            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="authUserName">Usuario</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="authUserRole">Responsable</div>
+                        </div>
+                        <button type="button" class="btn-icon" style="width: 28px; height: 28px; color: #dc2626; border: none; background: transparent;" title="Cerrar sesión" onclick="logoutUsuario()">
+                            <i class="ph-bold ph-sign-out" style="font-size: 1.1rem;"></i>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -605,16 +630,16 @@
                 <!-- Aviso institucional de autorización -->
                 <div class="auth-notice-box" style="margin-bottom: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.82rem; color: #14532d; display: flex; align-items: center; gap: 8px;">
                     <i class="ph-bold ph-shield-check" style="font-size: 1.2rem; color: var(--tecmilenio-green); flex-shrink: 0;"></i>
-                    <span><strong>Regla institucional:</strong> La reserva debe ser registrada por un <strong>Responsable o Colaborador</strong>. Los profesores no pueden agendar directamente por su cuenta, pero pueden ser asignados a la clase.</span>
+                    <span><strong>Regla institucional:</strong> El permiso de agendar y modificar eventos es exclusivo para <strong>Coordinadores y Mentores</strong>. Los demás usuarios tienen permiso únicamente de visualización.</span>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group col-6">
-                        <label for="reservaUsuario"><i class="ph-bold ph-user-check"></i> Responsable / Colaborador *</label>
+                        <label for="reservaUsuario"><i class="ph-bold ph-user-check"></i> Coordinador o Mentor Autorizado *</label>
                         <select id="reservaUsuario" class="form-control" required>
-                            <option value="">Selecciona al Responsable/Colaborador...</option>
+                            <option value="">Selecciona al Coordinador o Mentor...</option>
                         </select>
-                        <small class="form-hint">Autorizador de la reserva</small>
+                        <small class="form-hint">Persona autorizada con rol de Coordinador o Mentor</small>
                     </div>
                     <div class="form-group col-6">
                         <label for="reservaProfesor"><i class="ph-bold ph-chalkboard-teacher"></i> Profesor Asignado (Opcional)</label>
@@ -942,6 +967,9 @@
     <!-- TOAST DE NOTIFICACIONES -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- AUTENTICACIÓN MICROSOFT (MSAL / OIDC TECMILENIO) -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+    <script src="js/msal-auth.js"></script>
     <script src="js/logo_data.js"></script>
     <script src="js/app.js"></script>
 </body>

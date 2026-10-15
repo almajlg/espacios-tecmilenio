@@ -85,13 +85,12 @@ public class Main {
         public void handle(HttpExchange exchange) throws IOException {
             String path = exchange.getRequestURI().getPath();
             if (path == null || path.equals("/") || path.isEmpty()) {
-                path = "/index.html";
+                path = "/login.html";
             }
 
             File requestedFile = new File(frontendDir, path.substring(1));
             if (!requestedFile.exists() || requestedFile.isDirectory()) {
-                // Fallback a index.html para Single Page Application
-                requestedFile = new File(frontendDir, "index.html");
+                requestedFile = new File(frontendDir, "login.html");
             }
 
             if (!requestedFile.exists()) {
