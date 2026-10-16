@@ -116,6 +116,12 @@
                         <span>Nuevo Espacio</span>
                     </button>
 
+                    <!-- BOTÓN DE VISTA DE OTRO USUARIO / SIMULADOR (EXCLUSIVO CUENTA al02995902) -->
+                    <button type="button" class="btn-role-switch" id="btnSwitchUserRole" title="Cambiar a la vista de otro usuario (Profesor, Coordinador o Mentor)" onclick="abrirModalVistaUsuario()" style="display: none;">
+                        <i class="ph-bold ph-users-three"></i>
+                        <span>Vista de Usuario</span>
+                    </button>
+
                     <!-- USUARIO AUTENTICADO CON MICROSOFT -->
                     <div class="header-user-badge" id="headerUserBadge" style="display: none; align-items: center; gap: 0.65rem; background: #ffffff; border: 1px solid var(--border-color); padding: 4px 10px 4px 6px; border-radius: 30px; box-shadow: var(--shadow-sm);">
                         <div class="user-avatar-circle" id="authUserAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--tecmilenio-dark); color: #ffffff; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center;">
@@ -131,6 +137,17 @@
                     </div>
                 </div>
             </header>
+
+            <!-- BANNER DE VISTA DE OTRO USUARIO / SIMULACIÓN ACTIVA -->
+            <div class="simulated-user-banner" id="simulatedUserBanner" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="ph-bold ph-binoculars" style="font-size: 1.25rem; color: #d97706;"></i>
+                    <span>Estás explorando el sistema como: <strong id="simulatedUserName">Usuario</strong> (<span id="simulatedUserRole" style="font-weight: 600;">Rol</span>).</span>
+                </div>
+                <button type="button" class="btn-sm" style="background: #ffffff; border: 1px solid #d97706; color: #b45309; padding: 4px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" onclick="restaurarCuentaOriginal()">
+                    <i class="ph-bold ph-arrow-u-up-left"></i> Volver a mi cuenta original
+                </button>
+            </div>
 
             <!-- CONTENEDOR DE PESTAÑAS -->
             <div class="views-wrapper">
@@ -552,7 +569,7 @@
                             <button class="pill-btn" data-espacio-filter="Otro">🌅 Otros</button>
                         </div>
 
-                        <button class="btn-primary" onclick="document.getElementById('btnOpenModalEspacio').click()">
+                        <button class="btn-primary" id="btnAgregarNuevoEspacio" onclick="document.getElementById('btnOpenModalEspacio').click()">
                             <i class="ph-bold ph-plus"></i> Agregar Nuevo Espacio
                         </button>
                     </div>
@@ -585,7 +602,6 @@
                                         <th>Nombre Completo</th>
                                         <th>Correo Institucional</th>
                                         <th>Rol</th>
-                                        <th>Acciones Rápidas</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyUsuarios">
@@ -635,11 +651,20 @@
 
                 <div class="form-row">
                     <div class="form-group col-6">
-                        <label for="reservaUsuario"><i class="ph-bold ph-user-check"></i> Coordinador o Mentor Autorizado *</label>
-                        <select id="reservaUsuario" class="form-control" required>
-                            <option value="">Selecciona al Coordinador o Mentor...</option>
-                        </select>
-                        <small class="form-hint">Persona autorizada con rol de Coordinador o Mentor</small>
+                        <label for="reservaUsuarioDisplayNombre"><i class="ph-bold ph-user-check"></i> Coordinador o Mentor Autorizado *</label>
+                        <div class="user-auth-locked-field" id="reservaUsuarioLockedBox">
+                            <div id="reservaUsuarioAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--tecmilenio-dark); color: #ffffff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                TM
+                            </div>
+                            <div style="flex: 1; min-width: 0; line-height: 1.2;">
+                                <div id="reservaUsuarioDisplayNombre" style="font-weight: 700; font-size: 0.86rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Usuario Activo</div>
+                                <div id="reservaUsuarioDisplayRol" style="font-size: 0.72rem; color: var(--tecmilenio-green); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="ph-bold ph-shield-check"></i> <span>Cuenta Microsoft Verificada</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Input oculto para compatibilidad con el backend Java -->
+                        <input type="hidden" id="reservaUsuario" name="idUsuario" required>
                     </div>
                     <div class="form-group col-6">
                         <label for="reservaProfesor"><i class="ph-bold ph-chalkboard-teacher"></i> Profesor Asignado (Opcional)</label>
@@ -783,6 +808,28 @@
                     </div>
                 </div>
 
+                <!-- OPCIÓN PREVIA: SINCRONIZACIÓN CON CALENDARIO DE OUTLOOK (.ICS Y CORREO) -->
+                <div class="form-row" id="rowOutlookSyncOption" style="margin-top: 4px; margin-bottom: 6px;">
+                    <div class="form-group col-12" style="margin-bottom: 0;">
+                        <label for="reservaSyncOutlook" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1.5px solid #7dd3fc; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08);">
+                            <input type="checkbox" id="reservaSyncOutlook" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: #0284c7; flex-shrink: 0; margin-top: 2px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+                                        <rect width="24" height="24" rx="4" fill="#0078D4"/>
+                                        <path d="M19 4H18V2H16V4H8V2H6V4H5C3.89 4 3.01 4.9 3.01 6L3 20C3 21.1 3.89 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4.9 19 4ZM19 20H5V9H19V20ZM7 11H12V16H7V11Z" fill="white"/>
+                                    </svg>
+                                    <strong style="color: #0369a1; font-size: 0.92rem; font-weight: 700;">Añadir evento a mi calendario de Outlook</strong>
+                                    <span style="background: #bae6fd; color: #0284c7; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600;">Opcional</span>
+                                </div>
+                                <p style="margin: 3px 0 0; font-size: 0.79rem; color: #0369a1; line-height: 1.35;">
+                                    Genera la invitación oficial para tu calendario en el correo de confirmación
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeModal('modalReserva')">Cancelar</button>
                     <button type="submit" class="btn-primary" id="btnSubmitReserva">
@@ -903,6 +950,104 @@
         </div>
     </div>
 
+    <!-- ================================================================ -->
+    <!-- MODAL: CAMBIAR VISTA DE USUARIO (MODO EXPLORACIÓN / PRUEBAS) -->
+    <!-- ================================================================ -->
+    <div class="modal-backdrop" id="modalVistaUsuario">
+        <div class="modal-card" style="max-width: 580px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="ph-bold ph-users-three" style="color: var(--tecmilenio-green);"></i>
+                    <h3>Vista de Otro Usuario (Simulador de Roles)</h3>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('modalVistaUsuario')">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <p style="font-size: 0.88rem; color: #64748b; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.45;">
+                    Selecciona cómo deseas visualizar el sistema para probar las distintas experiencias y permisos institucionales en tiempo real:
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <!-- Opción 1: Profesor (Solo Visualización) -->
+                    <div class="role-preview-card" onclick="seleccionarVistaUsuario('profesor')" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #ffffff;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                                <i class="ph-bold ph-eye"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a;">Vista de Profesor (Solo Visualización)</div>
+                                <div style="font-size: 0.78rem; color: #64748b;">Ej. <strong>Natalie Luna Casillas</strong> • Consulta agenda y salones sin permiso de agendar/modificar.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-ghost" style="flex-shrink: 0;">Activar</button>
+                    </div>
+
+                    <!-- Opción 2: Coordinador Académico -->
+                    <div class="role-preview-card" onclick="seleccionarVistaUsuario('coordinador')" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #ffffff;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                                <i class="ph-bold ph-calendar-check"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a;">Vista de Coordinador (Autorizado)</div>
+                                <div style="font-size: 0.78rem; color: #64748b;">Ej. <strong>Lilia Tapia Bernal</strong> • Puede agendar y editar eventos bajo su nombre.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-ghost" style="flex-shrink: 0;">Activar</button>
+                    </div>
+
+                    <!-- Opción 3: Mentor -->
+                    <div class="role-preview-card" onclick="seleccionarVistaUsuario('mentor')" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #ffffff;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                                <i class="ph-bold ph-handshake"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a;">Vista de Mentor (Autorizado)</div>
+                                <div style="font-size: 0.78rem; color: #64748b;">Ej. <strong>Alma Alin Reyes Hidalgo</strong> • Puede agendar eventos para actividades estudiantiles.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-ghost" style="flex-shrink: 0;">Activar</button>
+                    </div>
+
+                    <!-- Opción 4: Mi Cuenta Microsoft Original -->
+                    <div class="role-preview-card" onclick="restaurarCuentaOriginal(); closeModal('modalVistaUsuario');" style="border: 1px dashed var(--tecmilenio-green); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #f0fdf4;" id="cardRestaurarOriginal">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--tecmilenio-dark); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                                <i class="ph-bold ph-shield-check"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a;" id="vistaOriginalNombre">Mi Cuenta Microsoft Original</div>
+                                <div style="font-size: 0.78rem; color: #166534;" id="vistaOriginalDetalle">Administrador Institucional</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-primary" style="flex-shrink: 0;">Restaurar</button>
+                    </div>
+                </div>
+
+                <!-- Selector de cualquier usuario del campus -->
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <label for="selectCualquierUsuario" style="font-size: 0.84rem; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                        <i class="ph-bold ph-user-list"></i> O elige cualquier persona del directorio Tecmilenio:
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="selectCualquierUsuario" class="form-control" style="font-size: 0.85rem;">
+                            <option value="">Cargando usuarios...</option>
+                        </select>
+                        <button type="button" class="btn-secondary" onclick="activarVistaUsuarioSeleccionado()" style="white-space: nowrap;">
+                            Aplicar Vista
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('modalVistaUsuario')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL CONFIRMACIÓN Y DESCARGA DE REPORTE -->
     <div class="modal-backdrop" id="modalExitoReserva">
         <div class="modal" style="max-width: 520px; text-align: center; padding: 2rem;">
@@ -947,9 +1092,22 @@
                     <span style="color: #64748b;"><i class="ph-bold ph-file-arrow-up"></i> Layout Adjunto:</span>
                     <a id="exitoLayoutLink" href="#" target="_blank" style="color: #0284c7; font-weight: 600; text-decoration: none; max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</a>
                 </div>
+                <div style="display: none; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1;" id="exitoRowOutlook">
+                    <span style="color: #0369a1; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="#0078D4"/><path d="M19 4H18V2H16V4H8V2H6V4H5C3.89 4 3.01 4.9 3.01 6L3 20C3 21.1 3.89 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4.9 19 4ZM19 20H5V9H19V20ZM7 11H12V16H7V11Z" fill="white"/></svg>
+                        Calendario Outlook:
+                    </span>
+                    <span id="exitoOutlookBadge" style="font-weight: 600; font-size: 0.83rem;">-</span>
+                </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <a id="btnDescargarIcsModal" href="#" class="btn-primary" style="display: none; width: 100%; justify-content: center; background: #0078D4; border-color: #0078D4; font-size: 1rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(0, 120, 212, 0.25); text-decoration: none; color: white;">
+                    <i class="ph-bold ph-calendar-plus"></i> Abrir / Descargar Invitación Outlook (.ics)
+                </a>
+                <a id="btnAbrirOutlookModal" href="#" target="_blank" class="btn-primary" style="display: none; width: 100%; justify-content: center; background: #0369a1; border-color: #0369a1; font-size: 1rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(3, 105, 161, 0.25); text-decoration: none; color: white;">
+                    <i class="ph-bold ph-calendar-check"></i> Abrir en Outlook Calendar Web
+                </a>
                 <button type="button" class="btn-primary" id="btnDescargarWordModal" style="width: 100%; justify-content: center; background: #1d4ed8; border-color: #1d4ed8; font-size: 1rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(29, 78, 216, 0.2);">
                     <i class="ph-bold ph-file-doc"></i> Descargar Reporte en Word (.doc con Logo)
                 </button>

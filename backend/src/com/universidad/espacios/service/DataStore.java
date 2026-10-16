@@ -264,6 +264,17 @@ public class DataStore {
         return r;
     }
 
+    public synchronized Reserva updateReservaOutlookSync(int id, String eventId, String webLink) {
+        Reserva r = reservas.get(id);
+        if (r != null) {
+            r.setOutlookEventId(eventId);
+            r.setOutlookWebLink(webLink);
+            enrichReserva(r);
+            saveToFile();
+        }
+        return r;
+    }
+
     public synchronized Reserva updateReserva(int id, int idUsuario, int idEspacio, String fecha, 
                                               String horaInicio, String horaFin, 
                                               String motivo, String estado, String observaciones) throws Exception {
@@ -576,8 +587,9 @@ public class DataStore {
                 String nom = getString(obj, "nombreCompleto");
                 String mail = getString(obj, "correo");
                 String rol = getString(obj, "rol");
+                boolean oculto = getBool(obj, "ocultoDirectorio", false);
                 if (id > 0) {
-                    usuarios.put(id, new Usuario(id, nom, mail, rol));
+                    usuarios.put(id, new Usuario(id, nom, mail, rol, oculto));
                     if (id >= nextUsuarioId.get()) nextUsuarioId.set(id + 1);
                 }
             });
@@ -622,6 +634,8 @@ public class DataStore {
                              obs.toLowerCase().contains("mobiliario") || obs.toLowerCase().contains("[pf]")));
                 String lay = getString(obj, "archivoLayout");
                 String layNom = getString(obj, "archivoLayoutNombre");
+                String outEvId = getString(obj, "outlookEventId");
+                String outWeb = getString(obj, "outlookWebLink");
                 if (id > 0) {
                     Reserva r = new Reserva(id, idU, idE, fec, hi, hf, mot, est, obs);
                     r.setServicioMedico(med);
@@ -629,6 +643,8 @@ public class DataStore {
                     r.setServicioPlantaFisica(pf);
                     if (lay != null && !lay.trim().isEmpty()) r.setArchivoLayout(lay);
                     if (layNom != null && !layNom.trim().isEmpty()) r.setArchivoLayoutNombre(layNom);
+                    if (outEvId != null && !outEvId.trim().isEmpty()) r.setOutlookEventId(outEvId);
+                    if (outWeb != null && !outWeb.trim().isEmpty()) r.setOutlookWebLink(outWeb);
                     enrichReserva(r);
                     reservas.put(id, r);
                     if (id >= nextReservaId.get()) nextReservaId.set(id + 1);

@@ -15,6 +15,8 @@ public class Reserva {
     private boolean servicioPlantaFisica;
     private String archivoLayout;
     private String archivoLayoutNombre;
+    private String outlookEventId;
+    private String outlookWebLink;
 
     // Campos enriquecidos para la vista/API
     private String nombreUsuario;
@@ -125,6 +127,12 @@ public class Reserva {
     public String getArchivoLayoutNombre() { return archivoLayoutNombre; }
     public void setArchivoLayoutNombre(String archivoLayoutNombre) { this.archivoLayoutNombre = archivoLayoutNombre; }
 
+    public String getOutlookEventId() { return outlookEventId; }
+    public void setOutlookEventId(String outlookEventId) { this.outlookEventId = outlookEventId; }
+
+    public String getOutlookWebLink() { return outlookWebLink; }
+    public void setOutlookWebLink(String outlookWebLink) { this.outlookWebLink = outlookWebLink; }
+
     public String toJson() {
         return String.format(
             "{" +
@@ -141,6 +149,8 @@ public class Reserva {
             "\"servicioPlantaFisica\":%b," +
             "\"archivoLayout\":\"%s\"," +
             "\"archivoLayoutNombre\":\"%s\"," +
+            "\"outlookEventId\":\"%s\"," +
+            "\"outlookWebLink\":\"%s\"," +
             "\"observaciones\":\"%s\"," +
             "\"nombreUsuario\":\"%s\"," +
             "\"correoUsuario\":\"%s\"," +
@@ -163,6 +173,8 @@ public class Reserva {
             servicioPlantaFisica,
             escapeJson(archivoLayout != null ? archivoLayout : ""),
             escapeJson(archivoLayoutNombre != null ? archivoLayoutNombre : ""),
+            escapeJson(outlookEventId != null ? outlookEventId : ""),
+            escapeJson(outlookWebLink != null ? outlookWebLink : ""),
             escapeJson(observaciones),
             escapeJson(nombreUsuario),
             escapeJson(correoUsuario),

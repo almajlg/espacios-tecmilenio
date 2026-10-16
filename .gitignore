@@ -13,3 +13,12 @@ appespacios
 # Archivos subidos por usuarios (Layouts)
 frontend/uploads/*
 !frontend/uploads/.gitkeep
+
+# Maven y compilación Spring Boot
+target/
+**/target/
+
+# Binarios y túneles locales
+cloudflared.exe
+*.exe
+

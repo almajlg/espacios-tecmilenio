@@ -15,6 +15,7 @@ const AZURE_DEFAULT_CONFIG = {
 };
 
 const AUTH_USER_KEY = 'tecmilenio_auth_user';
+const MS_ACCESS_TOKEN_KEY = 'tecmilenio_ms_graph_token';
 const OIDC_STATE_KEY = 'tecmilenio_oidc_state';
 const OIDC_NONCE_KEY = 'tecmilenio_oidc_nonce';
 
@@ -76,6 +77,9 @@ async function initMsalAuth() {
                     await msalInstance.initialize();
                 }
                 const response = await msalInstance.handleRedirectPromise();
+                if (response && response.accessToken) {
+                    guardarTokenMicrosoftEnSesion(response.accessToken);
+                }
                 if (response && response.account) {
                     await procesarCuentaMicrosoft(response.account);
                 }
@@ -114,8 +118,13 @@ async function procesarHashAutenticacion(hashString) {
         return false;
     }
 
-    // Extraer id_token
-    const idToken = params.get('id_token') || params.get('access_token');
+    // Extraer tokens
+    const accessToken = params.get('access_token');
+    if (accessToken) {
+        guardarTokenMicrosoftEnSesion(accessToken);
+    }
+
+    const idToken = params.get('id_token') || accessToken;
     if (idToken) {
         const claims = parseJwt(idToken);
         if (claims) {
@@ -172,7 +181,9 @@ async function procesarCuentaMicrosoft(account) {
     // Determinar rol inicial sugerido según correo institucional:
     // Por defecto 'Profesor' (solo visualización), excepto coordinadores y mentores
     let rolSugerido = 'Profesor';
-    if (correo.includes('admin') || correo.includes('diana.barrios') || correo.includes('dabarrios') || correo.includes('coordinacion')) {
+    if (correo.includes('al02995902') || correo.includes('almajlg') || correo.includes('admin')) {
+        rolSugerido = 'Administrador';
+    } else if (correo.includes('diana.barrios') || correo.includes('dabarrios') || correo.includes('coordinacion')) {
         rolSugerido = 'Coordinador';
     } else if (correo.includes('mentor')) {
         rolSugerido = 'Mentor';
@@ -247,10 +258,13 @@ async function loginConMicrosoft() {
             }
 
             const loginRequest = {
-                scopes: ['User.Read', 'openid', 'profile', 'email']
+                scopes: ['User.Read', 'Calendars.ReadWrite', 'openid', 'profile', 'email']
             };
 
             const response = await msalInstance.loginPopup(loginRequest);
+            if (response && response.accessToken) {
+                guardarTokenMicrosoftEnSesion(response.accessToken);
+            }
             if (response && response.account) {
                 await procesarCuentaMicrosoft(response.account);
                 return;
@@ -281,7 +295,7 @@ function ejecutarOAuth2MicrosoftDirecto(clientId, tenantId) {
         client_id: clientId,
         response_type: 'id_token token',
         redirect_uri: redirectUri,
-        scope: 'openid profile email',
+        scope: 'openid profile email Calendars.ReadWrite User.Read',
         response_mode: 'fragment',
         state: state,
         nonce: nonce
@@ -390,6 +404,8 @@ async function logoutUsuario() {
     currentAuthUser = null;
     sessionStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem(MS_ACCESS_TOKEN_KEY);
+    localStorage.removeItem(MS_ACCESS_TOKEN_KEY);
 
     if (window.showToast) {
         window.showToast('Sesión finalizada correctamente.', 'info');
@@ -455,15 +471,261 @@ function actualizarVistaSegunAutenticacion() {
             }
         }
 
-        // Si existe el select de usuario en la reserva, sincronizarlo si es autorizado
-        const selectU = document.getElementById('reservaUsuario');
-        if (selectU && currentAuthUser.idUsuario) {
-            if (puedeAgendarModificar(currentAuthUser)) {
+        // Sincronizar el campo fijo de usuario en el modal de reservas
+        if (typeof window.actualizarCampoReservaUsuario === 'function' && currentAuthUser) {
+            window.actualizarCampoReservaUsuario(currentAuthUser);
+        } else {
+            const selectU = document.getElementById('reservaUsuario');
+            if (selectU && currentAuthUser && currentAuthUser.idUsuario) {
                 selectU.value = currentAuthUser.idUsuario;
             }
         }
+
+        // Visibilidad exclusiva de la función "Vista de Usuario": ÚNICAMENTE para al02995902
+        const btnSwitch = document.getElementById('btnSwitchUserRole');
+        const origUser = getOriginalAuthUser() || currentAuthUser;
+        const esCuentaAlma = origUser && (
+            (origUser.correo || '').toLowerCase().includes('al02995902') || 
+            (origUser.correo || '').toLowerCase().includes('almajlg')
+        );
+
+        if (btnSwitch) {
+            btnSwitch.style.display = esCuentaAlma ? 'inline-flex' : 'none';
+        }
+
+        actualizarBannerSimulacion();
     }
 }
+
+// ====================================================================
+// SIMULADOR DE ROLES / VISTA DE OTRO USUARIO (EXCLUSIVO al02995902)
+// ====================================================================
+const ORIGINAL_USER_KEY = 'tecmilenio_original_auth_user';
+
+function esCuentaAutorizadaSimulador(user) {
+    if (!user) return false;
+    const c = (user.correo || '').toLowerCase();
+    return c.includes('al02995902') || c.includes('almajlg');
+}
+
+function getOriginalAuthUser() {
+    const s = sessionStorage.getItem(ORIGINAL_USER_KEY) || localStorage.getItem(ORIGINAL_USER_KEY);
+    if (s) {
+        try {
+            return JSON.parse(s);
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
+function actualizarBannerSimulacion() {
+    const banner = document.getElementById('simulatedUserBanner');
+    const origUser = getOriginalAuthUser();
+    if (banner) {
+        if (origUser && currentAuthUser && currentAuthUser.esSimulado) {
+            banner.style.display = 'flex';
+            const nameEl = document.getElementById('simulatedUserName');
+            const roleEl = document.getElementById('simulatedUserRole');
+            if (nameEl) nameEl.textContent = currentAuthUser.nombre || currentAuthUser.nombreCompleto;
+            if (roleEl) roleEl.textContent = `${currentAuthUser.rol || 'Visualizador'} • ${puedeAgendarModificar(currentAuthUser) ? 'Autorizado' : 'Solo Visualización'}`;
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+}
+
+function simularVistaUsuario(target) {
+    if (!target) return;
+
+    // Validación estricta: solo permitida para la cuenta al02995902
+    const origUser = getOriginalAuthUser() || currentAuthUser;
+    if (!esCuentaAutorizadaSimulador(origUser)) {
+        if (window.showToast) {
+            window.showToast('Acceso restringido: Esta función solo está disponible para la cuenta administradora al02995902.', 'error');
+        }
+        return;
+    }
+
+    // Respaldar usuario original de Microsoft si aún no está guardado
+    if (!getOriginalAuthUser() && currentAuthUser && !currentAuthUser.esSimulado) {
+        sessionStorage.setItem(ORIGINAL_USER_KEY, JSON.stringify(currentAuthUser));
+        localStorage.setItem(ORIGINAL_USER_KEY, JSON.stringify(currentAuthUser));
+    }
+
+    const simUser = {
+        idUsuario: target.idUsuario,
+        nombre: target.nombreCompleto || target.nombre,
+        nombreCompleto: target.nombreCompleto || target.nombre,
+        correo: target.correo,
+        rol: target.rol,
+        proveedor: 'Simulador de Vista Institucional',
+        esSimulado: true
+    };
+
+    establecerSesionUsuario(simUser);
+
+    if (typeof window.actualizarCampoReservaUsuario === 'function') {
+        window.actualizarCampoReservaUsuario(simUser);
+    }
+    if (typeof window.populateSelects === 'function') {
+        window.populateSelects();
+    }
+    if (typeof window.renderReservasTable === 'function') {
+        window.renderReservasTable();
+    }
+    if (typeof window.updateDashboardStats === 'function') {
+        window.updateDashboardStats();
+    }
+
+    actualizarBannerSimulacion();
+
+    if (window.showToast) {
+        const esProfesor = !puedeAgendarModificar(simUser);
+        if (esProfesor) {
+            window.showToast(`Modo activo: Vista de ${simUser.nombre} (${simUser.rol} • Solo Visualización)`, 'info');
+        } else {
+            window.showToast(`Modo activo: Vista de ${simUser.nombre} (${simUser.rol} • Autorizado)`, 'success');
+        }
+    }
+}
+
+function restaurarCuentaOriginal() {
+    const orig = getOriginalAuthUser();
+    if (orig) {
+        sessionStorage.removeItem(ORIGINAL_USER_KEY);
+        localStorage.removeItem(ORIGINAL_USER_KEY);
+        establecerSesionUsuario(orig);
+
+        if (typeof window.actualizarCampoReservaUsuario === 'function') {
+            window.actualizarCampoReservaUsuario(orig);
+        }
+        if (typeof window.populateSelects === 'function') {
+            window.populateSelects();
+        }
+        if (typeof window.renderReservasTable === 'function') {
+            window.renderReservasTable();
+        }
+        if (typeof window.updateDashboardStats === 'function') {
+            window.updateDashboardStats();
+        }
+
+        actualizarBannerSimulacion();
+
+        if (window.showToast) {
+            window.showToast(`Has vuelto a tu cuenta original: ${orig.nombre || orig.nombreCompleto}`, 'success');
+        }
+    }
+}
+
+function abrirModalVistaUsuario() {
+    const orig = getOriginalAuthUser() || currentAuthUser;
+    if (!esCuentaAutorizadaSimulador(orig)) {
+        if (window.showToast) {
+            window.showToast('Acceso restringido: La función de Vista de Usuario solo está autorizada para la cuenta al02995902.', 'warning');
+        }
+        return;
+    }
+
+    if (typeof openModal === 'function') {
+        openModal('modalVistaUsuario');
+    } else {
+        const m = document.getElementById('modalVistaUsuario');
+        if (m) m.classList.add('active');
+    }
+
+    // Actualizar datos de la cuenta original en la tarjeta de restaurar
+    if (orig) {
+        const nomEl = document.getElementById('vistaOriginalNombre');
+        const detEl = document.getElementById('vistaOriginalDetalle');
+        if (nomEl) nomEl.textContent = orig.nombre || orig.nombreCompleto || 'Mi Cuenta Microsoft';
+        if (detEl) detEl.textContent = `${orig.rol || 'Administrador'} • ${orig.correo || ''}`;
+    }
+
+    poblarSelectVistaUsuarios();
+}
+
+function seleccionarVistaUsuario(tipo) {
+    const list = (window.state && window.state.usuarios) ? window.state.usuarios : [];
+    let seleccionado = null;
+
+    if (tipo === 'profesor') {
+        seleccionado = list.find(u => u.rol === 'Profesor' && (u.correo || '').includes('natalie.luna')) 
+                    || list.find(u => u.rol === 'Profesor');
+        if (!seleccionado) {
+            seleccionado = { idUsuario: 2, nombreCompleto: 'Natalie Luna Casillas', correo: 'natalie.luna@tecmilenio.mx', rol: 'Profesor' };
+        }
+    } else if (tipo === 'coordinador') {
+        seleccionado = list.find(u => u.rol === 'Coordinador' && (u.correo || '').includes('lily.tapia'))
+                    || list.find(u => u.rol === 'Coordinador');
+        if (!seleccionado) {
+            seleccionado = { idUsuario: 4, nombreCompleto: 'Lilia Tapia Bernal', correo: 'lily.tapia@tecmilenio.mx', rol: 'Coordinador' };
+        }
+    } else if (tipo === 'mentor') {
+        seleccionado = list.find(u => u.rol === 'Mentor' && (u.correo || '').includes('alin.reyes'))
+                    || list.find(u => u.rol === 'Mentor');
+        if (!seleccionado) {
+            seleccionado = { idUsuario: 84, nombreCompleto: 'Alma Alin Reyes Hidalgo', correo: 'alin.reyes@tecmilenio.mx', rol: 'Mentor' };
+        }
+    }
+
+    if (seleccionado) {
+        simularVistaUsuario(seleccionado);
+        if (typeof closeModal === 'function') {
+            closeModal('modalVistaUsuario');
+        } else {
+            const m = document.getElementById('modalVistaUsuario');
+            if (m) m.classList.remove('active');
+        }
+    }
+}
+
+function poblarSelectVistaUsuarios() {
+    const select = document.getElementById('selectCualquierUsuario');
+    if (!select) return;
+
+    const list = (window.state && window.state.usuarios) ? window.state.usuarios : [];
+    if (list.length === 0) return;
+
+    const prev = select.value;
+    select.innerHTML = '<option value="">-- Elige un usuario del campus --</option>';
+
+    const filtrados = list.filter(u => !u.ocultoDirectorio && (u.correo || '').toLowerCase() !== 'al02995902@tecmilenio.mx');
+    filtrados.sort((a, b) => (a.nombreCompleto || '').localeCompare(b.nombreCompleto || ''));
+
+    filtrados.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.idUsuario;
+        opt.textContent = `${u.nombreCompleto} (${u.rol}) - ${u.correo}`;
+        select.appendChild(opt);
+    });
+
+    if (prev) select.value = prev;
+}
+
+function activarVistaUsuarioSeleccionado() {
+    const select = document.getElementById('selectCualquierUsuario');
+    if (!select || !select.value) {
+        if (window.showToast) window.showToast('Selecciona a una persona de la lista.', 'warning');
+        return;
+    }
+
+    const id = parseInt(select.value);
+    const list = (window.state && window.state.usuarios) ? window.state.usuarios : [];
+    const target = list.find(u => u.idUsuario === id);
+
+    if (target) {
+        simularVistaUsuario(target);
+        if (typeof closeModal === 'function') {
+            closeModal('modalVistaUsuario');
+        } else {
+            const m = document.getElementById('modalVistaUsuario');
+            if (m) m.classList.remove('active');
+        }
+    }
+}
+
 
 /**
  * Mostrar modal de configuración de Azure AD
@@ -524,6 +786,99 @@ function guardarConfigAzure() {
     }
 }
 
+// ====================================================================
+// UTILIDADES PARA TOKEN DE MICROSOFT GRAPH & CALENDARIO OUTLOOK
+// ====================================================================
+function guardarTokenMicrosoftEnSesion(token) {
+    if (!token) return;
+    sessionStorage.setItem(MS_ACCESS_TOKEN_KEY, token);
+    localStorage.setItem(MS_ACCESS_TOKEN_KEY, token);
+    if (currentAuthUser) {
+        currentAuthUser.accessToken = token;
+    }
+}
+
+function getStoredMicrosoftToken() {
+    return sessionStorage.getItem(MS_ACCESS_TOKEN_KEY) || 
+           localStorage.getItem(MS_ACCESS_TOKEN_KEY) || 
+           (currentAuthUser ? currentAuthUser.accessToken : null);
+}
+
+function isTokenExpired(token) {
+    if (!token) return true;
+    try {
+        const claims = parseJwt(token);
+        if (!claims || !claims.exp) return false;
+        const now = Math.floor(Date.now() / 1000);
+        return claims.exp < (now + 60); // Considerar expirado si le quedan menos de 60 segundos
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Obtiene un token válido de Microsoft Graph. Si expiró o está ausente, puede solicitar renovación.
+ */
+async function getMicrosoftAccessToken(solicitarRenovacionSiExpiro = false) {
+    // 1. Si msalInstance está disponible e inicializado, intentar acquireTokenSilent
+    if (window.msal && msalInstance) {
+        try {
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length > 0) {
+                const response = await msalInstance.acquireTokenSilent({
+                    scopes: ['Calendars.ReadWrite', 'User.Read'],
+                    account: accounts[0]
+                });
+                if (response && response.accessToken) {
+                    guardarTokenMicrosoftEnSesion(response.accessToken);
+                    return response.accessToken;
+                }
+            }
+        } catch (silentErr) {
+            console.warn('MSAL acquireTokenSilent no pudo renovar silenciosamente:', silentErr);
+        }
+    }
+
+    // 2. Token guardado en sesión previa
+    const stored = getStoredMicrosoftToken();
+    if (stored && !isTokenExpired(stored)) {
+        return stored;
+    }
+
+    // 3. Si expiró o no existe y se solicitó explícitamente renovar
+    if (solicitarRenovacionSiExpiro) {
+        return await renovarTokenMicrosoft();
+    }
+
+    return stored;
+}
+
+/**
+ * Solicita renovación interactiva del token de Microsoft con popup sin perder el estado actual
+ */
+async function renovarTokenMicrosoft() {
+    if (window.msal && msalInstance) {
+        try {
+            const response = await msalInstance.acquireTokenPopup({
+                scopes: ['Calendars.ReadWrite', 'User.Read', 'openid', 'profile']
+            });
+            if (response && response.accessToken) {
+                guardarTokenMicrosoftEnSesion(response.accessToken);
+                if (window.showToast) {
+                    window.showToast('¡Sesión de Microsoft renovada exitosamente!', 'success');
+                }
+                return response.accessToken;
+            }
+        } catch (popupErr) {
+            console.warn('acquireTokenPopup error:', popupErr);
+        }
+    }
+
+    // Si no está disponible MSAL o falló, ejecutar el flujo directo
+    await loginConMicrosoft();
+    return getStoredMicrosoftToken();
+}
+
 // Exponer en window para acceso global
 window.initMsalAuth = initMsalAuth;
 window.loginConMicrosoft = loginConMicrosoft;
@@ -532,3 +887,15 @@ window.logoutUsuario = logoutUsuario;
 window.mostrarModalConfigAzure = mostrarModalConfigAzure;
 window.guardarConfigAzure = guardarConfigAzure;
 window.getAuthUser = () => currentAuthUser;
+window.getOriginalAuthUser = getOriginalAuthUser;
+window.simularVistaUsuario = simularVistaUsuario;
+window.restaurarCuentaOriginal = restaurarCuentaOriginal;
+window.abrirModalVistaUsuario = abrirModalVistaUsuario;
+window.seleccionarVistaUsuario = seleccionarVistaUsuario;
+window.poblarSelectVistaUsuarios = poblarSelectVistaUsuarios;
+window.activarVistaUsuarioSeleccionado = activarVistaUsuarioSeleccionado;
+window.actualizarBannerSimulacion = actualizarBannerSimulacion;
+window.getMicrosoftAccessToken = getMicrosoftAccessToken;
+window.guardarTokenMicrosoftEnSesion = guardarTokenMicrosoftEnSesion;
+window.isTokenExpired = isTokenExpired;
+window.renovarTokenMicrosoft = renovarTokenMicrosoft;

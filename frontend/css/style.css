@@ -1771,3 +1771,158 @@ h1, h2, h3, h4, .brand-text h2 {
     user-select: none;
 }
 
+/* ====================================================================
+   VISTA DE OTRO USUARIO / SIMULADOR DE ROLES Y CAMPO DE USUARIO FIJO
+   ==================================================================== */
+
+.btn-role-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-role-switch:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-role-switch i {
+    font-size: 1.05rem;
+    color: var(--tecmilenio-green);
+}
+
+.simulated-user-banner {
+    background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
+    border-bottom: 1px solid #fde68a;
+    padding: 8px 24px;
+    font-size: 0.84rem;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 0;
+    z-index: 95;
+    animation: slideDownBanner 0.25s ease-out;
+}
+
+@keyframes slideDownBanner {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.role-preview-card {
+    transition: all 0.2s ease;
+}
+
+.role-preview-card:hover {
+    border-color: var(--tecmilenio-green) !important;
+    background: #f8faf8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.user-auth-locked-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 12px;
+    min-height: 48px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* ====================================================================
+   MODO SOLO VISUALIZACIÓN (PROFESORES / USUARIOS REGULARES)
+   Oculta completamente todos los botones de agendamiento y edición
+   ==================================================================== */
+
+/* 1. Botones de "Agendar Espacio" (Barra lateral, portada hero y acciones de usuario) */
+body.mode-view-only .btn-quick-reserve,
+body.mode-view-only .btn-glow,
+body.mode-view-only button[onclick*="btnOpenModalReserva"],
+body.mode-view-only button[onclick*="openReservaConUsuario"] {
+    display: none !important;
+}
+
+/* 2. Botones de "Agendar Aquí" y barra de acciones de las tarjetas de espacios */
+body.mode-view-only .btn-card-reserve,
+body.mode-view-only .espacio-actions {
+    display: none !important;
+}
+
+/* 3. Botones de "Editar Espacio" y "Nuevo Espacio / Usuario" */
+body.mode-view-only button[onclick*="abrirEditarEspacio"],
+body.mode-view-only #btnOpenModalEspacio,
+body.mode-view-only #btnAgregarNuevoEspacio,
+body.mode-view-only button[onclick*="btnOpenModalEspacio"],
+body.mode-view-only #btnOpenModalUsuario {
+    display: none !important;
+}
+
+/* 4. Botones de "Modificar" / editar / cancelar / eliminar reservas */
+body.mode-view-only button[onclick*="abrirEditarReserva"],
+body.mode-view-only button[onclick*="cambiarEstadoReserva"],
+body.mode-view-only button[onclick*="eliminarReserva"] {
+    display: none !important;
+}
+
+/* 5. Celdas libres del cronograma de horarios (desactivar clic para agendar) */
+body.mode-view-only .slot-free {
+    pointer-events: none !important;
+    cursor: default !important;
+    background: transparent !important;
+}
+
+body.mode-view-only .edif1-chip,
+body.mode-view-only .edif2-chip,
+body.mode-view-only .aldea-chip {
+    cursor: default !important;
+}
+
+/* ====================================================================
+   SINCRONIZACIÓN MICROSOFT OUTLOOK CALENDAR
+   ==================================================================== */
+.outlook-sync-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.outlook-sync-card:hover {
+    border-color: #0284c7 !important;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12) !important;
+}
+
+.outlook-token-warning {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+

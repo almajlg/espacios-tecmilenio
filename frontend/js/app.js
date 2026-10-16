@@ -458,6 +458,7 @@ function renderAgenda() {
                     <button class="btn-icon" style="color:#15803d;background:#f0fdf4;width:30px;height:30px;" title="Descargar Ficha Individual en Excel (.csv)" onclick="descargarReporteExcelIndividual(${r.idReserva})">
                         <i class="ph-bold ph-microsoft-excel-logo"></i>
                     </button>
+
                     ${puedeAgendarModificar(window.getAuthUser ? window.getAuthUser() : null) ? `
                         <button class="btn-icon" style="color:var(--tecmilenio-green);width:30px;height:30px;" title="Editar Reserva (Solo Coordinador o Mentor)" onclick="abrirEditarReserva(${r.idReserva})">
                             <i class="ph-bold ph-pencil-simple"></i>
@@ -802,6 +803,7 @@ function renderEspaciosGrid() {
 }
 
 // ====================================================================
+// ====================================================================
 // 7. USUARIOS
 // ====================================================================
 function renderUsuarios() {
@@ -809,14 +811,16 @@ function renderUsuarios() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (state.usuarios.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">No hay usuarios registrados.</td></tr>`;
+    // Filtrar usuarios marcados como ocultos (ej. Administradora general que no es colaboradora pública)
+    const usuariosVisibles = state.usuarios.filter(u => !u.ocultoDirectorio && (u.correo || '').toLowerCase() !== 'al02995902@tecmilenio.mx');
+
+    if (usuariosVisibles.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">No hay usuarios registrados en el directorio.</td></tr>`;
         return;
     }
 
-    state.usuarios.forEach(u => {
+    usuariosVisibles.forEach(u => {
         const tr = document.createElement('tr');
-        const puedeAgendar = puedeAgendarModificar(u);
         const badgeRoleClass = u.rol === 'Administrador' ? 'edificio1' : 
                                u.rol === 'Coordinador' ? 'edificio1' : 
                                u.rol === 'Mentor' ? 'aldea' : 'otro';
@@ -826,47 +830,48 @@ function renderUsuarios() {
             <td><strong>${escapeHtml(u.nombreCompleto)}</strong></td>
             <td><a href="mailto:${u.correo}" style="color:var(--tecmilenio-green);text-decoration:none;font-weight:500;">${escapeHtml(u.correo)}</a></td>
             <td><span class="badge-type ${badgeRoleClass}">${escapeHtml(u.rol)}</span></td>
-            <td>
-                ${puedeAgendar ? `
-                    <button class="btn-secondary" style="padding:6px 12px;font-size:0.8rem;" onclick="openReservaConUsuario(${u.idUsuario})">
-                        <i class="ph-bold ph-calendar-plus"></i> Agendar como ${escapeHtml(u.nombreCompleto.split(' ')[0])}
-                    </button>
-                ` : `
-                    <span style="font-size:0.75rem;color:var(--text-muted);" title="Solo Coordinadores y Mentores tienen permiso de agendar y modificar">
-                        <i class="ph-bold ph-eye"></i> Solo Visualización
-                    </span>
-                `}
-            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-function populateSelects() {
-    // 1. Select de Responsable / Coordinador / Mentor (SOLO autorizados para agendar)
-    const uSelect = document.getElementById('reservaUsuario');
-    if (uSelect) {
-        const prevVal = uSelect.value;
-        uSelect.innerHTML = '<option value="">Selecciona al Coordinador o Mentor autorizado...</option>';
-        
-        const autorizados = state.usuarios.filter(u => puedeAgendarModificar(u));
-        autorizados.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto));
+function actualizarCampoReservaUsuario(u) {
+    if (!u) return;
+    const hiddenInp = document.getElementById('reservaUsuario');
+    const nameEl = document.getElementById('reservaUsuarioDisplayNombre');
+    const rolEl = document.getElementById('reservaUsuarioDisplayRol');
+    const avatarEl = document.getElementById('reservaUsuarioAvatar');
 
-        autorizados.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u.idUsuario;
-            opt.textContent = `${u.nombreCompleto} (${u.rol})`;
-            uSelect.appendChild(opt);
-        });
-
-        if (prevVal) {
-            uSelect.value = prevVal;
-        } else if (window.getAuthUser && window.getAuthUser() && window.getAuthUser().idUsuario) {
-            const authUser = window.getAuthUser();
-            if (puedeAgendarModificar(authUser)) {
-                uSelect.value = authUser.idUsuario;
-            }
+    if (hiddenInp) hiddenInp.value = u.idUsuario || '';
+    if (nameEl) nameEl.textContent = u.nombreCompleto || u.nombre || 'Usuario Activo';
+    
+    const autorizado = puedeAgendarModificar(u);
+    if (rolEl) {
+        if (autorizado) {
+            rolEl.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${u.rol || 'Autorizado'} • Cuenta Verificada</span>`;
+            rolEl.style.color = 'var(--tecmilenio-green)';
+        } else {
+            rolEl.innerHTML = `<i class="ph-bold ph-eye"></i> <span>${u.rol || 'Profesor'} • Solo Visualización</span>`;
+            rolEl.style.color = '#d97706';
         }
+    }
+    if (avatarEl) {
+        const nom = u.nombreCompleto || u.nombre || 'TM';
+        const iniciales = nom.split(' ').filter(x => x).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+        avatarEl.textContent = iniciales || 'TM';
+        avatarEl.style.background = autorizado ? 'var(--tecmilenio-dark)' : '#64748b';
+    }
+}
+window.actualizarCampoReservaUsuario = actualizarCampoReservaUsuario;
+
+function populateSelects() {
+    // 1. Campo de Responsable / Coordinador / Mentor (Fijo al usuario con sesión activa de Microsoft)
+    const authUser = window.getAuthUser ? window.getAuthUser() : null;
+    if (authUser) {
+        actualizarCampoReservaUsuario(authUser);
+    }
+    if (typeof window.poblarSelectVistaUsuarios === 'function') {
+        window.poblarSelectVistaUsuarios();
     }
 
     // 2. Select de Profesor Asignado a la clase (opcional pero muy útil)
@@ -875,7 +880,7 @@ function populateSelects() {
         const prevProfVal = profSelect.value;
         profSelect.innerHTML = '<option value="">-- Sin profesor / Asignar después --</option>';
 
-        const profesores = state.usuarios.filter(u => u.rol === 'Profesor');
+        const profesores = state.usuarios.filter(u => u.rol === 'Profesor' && !u.ocultoDirectorio && (u.correo || '').toLowerCase() !== 'al02995902@tecmilenio.mx');
         profesores.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto));
 
         profesores.forEach(p => {
@@ -958,6 +963,11 @@ function setupModals() {
     const btnEsp = document.getElementById('btnOpenModalEspacio');
     if (btnEsp) {
         btnEsp.onclick = () => {
+            const auth = window.getAuthUser ? window.getAuthUser() : null;
+            if (auth && !puedeAgendarModificar(auth)) {
+                showToast('Permiso restringido: El permiso de registrar o modificar espacios es exclusivo para Coordinadores y Mentores.', 'warning');
+                return;
+            }
             document.getElementById('modalEspacioTitle').textContent = 'Nuevo Espacio Universitario';
             document.getElementById('formEspacio').reset();
             document.getElementById('espacioEditId').value = '';
@@ -1094,12 +1104,16 @@ function abrirModalNuevaReserva() {
     document.getElementById('reservaHoraInicio').value = '10:00';
     document.getElementById('reservaHoraFin').value = '11:30';
 
-    // Pre-seleccionar usuario autenticado si es Coordinador o Mentor
-    if (window.getAuthUser && window.getAuthUser() && window.getAuthUser().idUsuario) {
-        const uSelect = document.getElementById('reservaUsuario');
-        if (uSelect && puedeAgendarModificar(window.getAuthUser())) {
-            uSelect.value = window.getAuthUser().idUsuario;
-        }
+    // Asignar obligatoriamente la cuenta autenticada activa (no modificable)
+    const activeAuth = window.getAuthUser ? window.getAuthUser() : null;
+    if (activeAuth) {
+        actualizarCampoReservaUsuario(activeAuth);
+    }
+
+    // Configuración del checkbox opcional de Outlook
+    const chkSync = document.getElementById('reservaSyncOutlook');
+    if (chkSync) {
+        chkSync.checked = true;
     }
 
     openModal('modalReserva');
@@ -1118,7 +1132,10 @@ function abrirEditarReserva(idReserva) {
 
     document.getElementById('modalReservaTitle').textContent = `Editar Reserva #${r.idReserva}`;
     document.getElementById('reservaEditId').value = r.idReserva;
-    document.getElementById('reservaUsuario').value = r.idUsuario;
+    
+    // Mostrar el responsable de la reserva en la tarjeta fija
+    const resp = state.usuarios.find(x => x.idUsuario === r.idUsuario) || { idUsuario: r.idUsuario, nombreCompleto: `Usuario #${r.idUsuario}`, rol: 'Autorizado' };
+    actualizarCampoReservaUsuario(resp);
     
     const selectEsp = document.getElementById('reservaEspacio');
     if (selectEsp) {
@@ -1139,6 +1156,11 @@ function abrirEditarReserva(idReserva) {
     if (chkTI) chkTI.checked = !!r.servicioTI;
     const chkPF = document.getElementById('reservaServicioPlantaFisica');
     if (chkPF) chkPF.checked = !!r.servicioPlantaFisica;
+
+    const chkSync = document.getElementById('reservaSyncOutlook');
+    if (chkSync) {
+        chkSync.checked = !!(r.outlookEventId || r.outlookWebLink);
+    }
 
     // Cargar archivo de layout si existe
     cargarLayoutEnEdicion(r);
@@ -1185,8 +1207,8 @@ function openReservaParaEspacio(idEspacio) {
 
 function openReservaConUsuario(idUsuario) {
     abrirModalNuevaReserva();
-    const uSelect = document.getElementById('reservaUsuario');
-    if (uSelect) uSelect.value = idUsuario;
+    const u = state.usuarios.find(x => x.idUsuario === idUsuario);
+    if (u) actualizarCampoReservaUsuario(u);
 }
 
 function openModalReservaConEdificio(edificio) {
@@ -1205,6 +1227,12 @@ function openModalReservaConEdificio(edificio) {
 }
 
 function abrirEditarEspacio(idEspacio) {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Solo coordinadores y administradores tienen autorización para editar espacios.', 'warning');
+        return;
+    }
+
     const e = state.espacios.find(x => x.idEspacio === idEspacio);
     if (!e) return;
 
@@ -1309,22 +1337,28 @@ function toMinutes(time) {
 // ====================================================================
 async function handleReservaSubmit() {
     const editId = document.getElementById('reservaEditId').value;
-    const idUsuario = parseInt(document.getElementById('reservaUsuario').value);
+    let idUsuario = parseInt(document.getElementById('reservaUsuario').value);
     const idEspacio = parseInt(document.getElementById('reservaEspacio').value);
+    const authActivo = window.getAuthUser ? window.getAuthUser() : null;
+
+    // En nueva reserva, vincular obligatoriamente al usuario autenticado activo
+    if (!editId && authActivo && authActivo.idUsuario) {
+        idUsuario = authActivo.idUsuario;
+        document.getElementById('reservaUsuario').value = idUsuario;
+    }
 
     if (!idUsuario) {
-        showToast('Debes seleccionar al Coordinador o Mentor autorizado para registrar la reserva.', 'warning');
+        showToast('No se detectó un usuario autenticado para registrar la reserva.', 'warning');
         return;
     }
 
     // Validar regla de autorización: Solo coordinadores y mentores pueden agendar y modificar
-    const usuarioAutorizado = state.usuarios.find(u => u.idUsuario === idUsuario);
+    const usuarioAutorizado = state.usuarios.find(u => u.idUsuario === idUsuario) || authActivo;
     if (!puedeAgendarModificar(usuarioAutorizado)) {
-        showToast('El permiso de agendar un nuevo evento sólo lo tienen los coordinadores y mentores. Los demás pueden solo visualizar.', 'error');
+        showToast('El permiso de agendar un nuevo evento sólo lo tienen los coordinadores y mentores. Los profesores y demás usuarios tienen permiso únicamente de visualización.', 'error');
         return;
     }
 
-    const authActivo = window.getAuthUser ? window.getAuthUser() : null;
     if (authActivo && !puedeAgendarModificar(authActivo)) {
         showToast('Tu cuenta tiene permiso únicamente de visualización. Solo coordinadores y mentores pueden registrar o modificar eventos.', 'error');
         return;
@@ -1393,6 +1427,34 @@ async function handleReservaSubmit() {
         }
     }
 
+    // Opción previa: Sincronización con Outlook Calendar
+    const chkSyncOutlook = document.getElementById('reservaSyncOutlook');
+    const syncOutlook = chkSyncOutlook ? chkSyncOutlook.checked : false;
+    let msAccessToken = null;
+
+    if (syncOutlook) {
+        // Obtener el token de Microsoft guardado en sesión
+        if (typeof window.getMicrosoftAccessToken === 'function') {
+            msAccessToken = await window.getMicrosoftAccessToken(false);
+            
+            // Si no hay token o expiró, advertir y permitir renovar
+            const tokenExpirado = !msAccessToken || (typeof window.isTokenExpired === 'function' && window.isTokenExpired(msAccessToken));
+            if (tokenExpirado) {
+                const deseaRenovar = confirm(
+                    'Has marcado añadir este evento a tu calendario de Outlook, pero tu sesión de Microsoft ha expirado o no cuenta con token activo.\n\n' +
+                    '¿Deseas iniciar sesión / renovar tu token de Microsoft en este momento para sincronizar el evento en tu calendario?'
+                );
+                if (deseaRenovar && typeof window.renovarTokenMicrosoft === 'function') {
+                    try {
+                        msAccessToken = await window.renovarTokenMicrosoft();
+                    } catch (renovErr) {
+                        console.warn('No fue posible renovar el token:', renovErr);
+                    }
+                }
+            }
+        }
+    }
+
     const payload = {
         idUsuario: idUsuario,
         idEspacio: idEspacio,
@@ -1405,7 +1467,9 @@ async function handleReservaSubmit() {
         servicioTI: servicioTI,
         servicioPlantaFisica: servicioPlantaFisica,
         archivoLayout: finalLayoutUrl,
-        archivoLayoutNombre: finalLayoutNombre
+        archivoLayoutNombre: finalLayoutNombre,
+        syncOutlook: syncOutlook,
+        outlookAccessToken: msAccessToken
     };
 
     if (editId) {
@@ -1414,13 +1478,19 @@ async function handleReservaSubmit() {
 
     try {
         let savedId = null;
+        let outlookSyncResult = null;
         if (state.backendConnected) {
             const url = editId ? `${API_BASE}/reservas/${editId}` : `${API_BASE}/reservas`;
             const method = editId ? 'PUT' : 'POST';
 
+            const headers = { 'Content-Type': 'application/json' };
+            if (msAccessToken) {
+                headers['Authorization'] = `Bearer ${msAccessToken}`;
+            }
+
             const res = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify(payload)
             });
 
@@ -1431,7 +1501,21 @@ async function handleReservaSubmit() {
 
             const data = await res.json();
             savedId = data.idReserva || (editId ? parseInt(editId) : null);
-            showToast(editId ? '¡Reserva actualizada correctamente!' : '¡Reserva confirmada con éxito!', 'success');
+            outlookSyncResult = data.outlookSync || null;
+
+            if (outlookSyncResult) {
+                if (outlookSyncResult.success) {
+                    showToast('¡Cita confirmada y sincronizada en tu calendario de Outlook!', 'success');
+                } else if (outlookSyncResult.errorType === 'TOKEN_EXPIRED') {
+                    showToast('Cita guardada en el campus, pero tu sesión de Microsoft expiró y no se pudo añadir a Outlook. Vuelve a iniciar sesión para sincronizarla.', 'warning');
+                } else if (outlookSyncResult.errorType === 'INSUFFICIENT_PERMISSIONS') {
+                    showToast('Cita guardada en el campus, pero se requieren permisos de calendario (Calendars.ReadWrite) en tu cuenta de Microsoft.', 'warning');
+                } else {
+                    showToast('Cita guardada en el campus. Aviso de sincronización: ' + (outlookSyncResult.message || 'No se pudo conectar con Outlook'), 'warning');
+                }
+            } else {
+                showToast(editId ? '¡Reserva actualizada correctamente!' : '¡Reserva confirmada con éxito!', 'success');
+            }
         } else {
             // Modo local fallback
             if (editId) {
@@ -1461,7 +1545,7 @@ async function handleReservaSubmit() {
         await loadAllData();
 
         if (savedId) {
-            mostrarModalExitoReserva(savedId);
+            mostrarModalExitoReserva(savedId, outlookSyncResult);
         }
     } catch (err) {
         showToast(err.message, 'error');
@@ -1469,6 +1553,12 @@ async function handleReservaSubmit() {
 }
 
 async function handleEspacioSubmit() {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Tu cuenta tiene permiso únicamente de visualización. No tienes autorización para crear o modificar espacios.', 'error');
+        return;
+    }
+
     const editId = document.getElementById('espacioEditId').value;
     const payload = {
         nombreEspacio: document.getElementById('espacioNombre').value.trim(),
@@ -2094,7 +2184,7 @@ function exportarReservasCsv() {
 // REPORTES INDIVIDUALES (WORD .DOC CON LOGO Y EXCEL .CSV)
 // ====================================================================
 
-function mostrarModalExitoReserva(idReserva) {
+function mostrarModalExitoReserva(idReserva, outlookSyncData = null) {
     const r = state.reservas.find(x => x.idReserva === idReserva);
     if (!r) return;
 
@@ -2140,6 +2230,37 @@ function mostrarModalExitoReserva(idReserva) {
             rowLay.style.display = 'none';
         }
     }
+
+    // Estado e integración de Outlook Calendar en el modal de éxito (.ics y correo)
+    const rowOutlook = document.getElementById('exitoRowOutlook');
+    const badgeOutlook = document.getElementById('exitoOutlookBadge');
+    const btnIcs = document.getElementById('btnDescargarIcsModal');
+    const btnAbrirOutlook = document.getElementById('btnAbrirOutlookModal');
+    const btnSyncManual = document.getElementById('btnSyncManualOutlookModal');
+
+    const tieneOutlook = (outlookSyncData && outlookSyncData.success) || (r.outlookWebLink && r.outlookWebLink.length > 5) || (r.outlookEventId && r.outlookEventId.length > 5);
+    const linkOutlook = (outlookSyncData && outlookSyncData.webLink) || r.outlookWebLink;
+
+    if (btnIcs) {
+        btnIcs.style.display = 'flex';
+        btnIcs.href = `${API_BASE}/reservas/${r.idReserva}/invitacion.ics`;
+        btnIcs.setAttribute('download', `invitacion_TM-CUAU-${String(r.idReserva).padStart(4, '0')}.ics`);
+    }
+
+    if (rowOutlook && badgeOutlook) {
+        rowOutlook.style.display = 'flex';
+        badgeOutlook.innerHTML = `<span style="color:#0284c7;background:#e0f2fe;padding:2px 8px;border-radius:6px;font-weight:700;"><i class="ph-bold ph-calendar-check"></i> Invitación Outlook (.ics) Generada</span>`;
+    }
+
+    if (btnAbrirOutlook) {
+        if (tieneOutlook && linkOutlook) {
+            btnAbrirOutlook.style.display = 'flex';
+            btnAbrirOutlook.href = linkOutlook;
+        } else {
+            btnAbrirOutlook.style.display = 'none';
+        }
+    }
+
 
     const btnWord = document.getElementById('btnDescargarWordModal');
     if (btnWord) btnWord.onclick = () => descargarReporteWord(r.idReserva);
@@ -2580,3 +2701,91 @@ function loadMockFallbackData() {
     }
     renderAllViews();
 }
+
+// ====================================================================
+// FUNCIONES DE INTEGRACIÓN MICROSOFT GRAPH & CALENDARIO OUTLOOK
+// ====================================================================
+
+/**
+ * Permite exportar/sincronizar manualmente cualquier cita con el calendario
+ * de Outlook de forma individual.
+ */
+async function sincronizarReservaConOutlookManual(idReserva) {
+    const auth = window.getAuthUser ? window.getAuthUser() : null;
+    if (auth && !puedeAgendarModificar(auth)) {
+        showToast('Permiso restringido: Solo coordinadores y mentores pueden sincronizar eventos.', 'warning');
+        return;
+    }
+
+    const r = state.reservas.find(x => x.idReserva === idReserva);
+    if (!r) {
+        showToast('Reserva no encontrada.', 'error');
+        return;
+    }
+
+    showToast('Conectando con Outlook para sincronizar cita...', 'info');
+
+    // Obtener token (solicita renovación interactiva si expiró)
+    let token = null;
+    if (typeof window.getMicrosoftAccessToken === 'function') {
+        token = await window.getMicrosoftAccessToken(false);
+        
+        // Si no hay token o expiró, abrir renovación
+        const tokenExpirado = !token || (typeof window.isTokenExpired === 'function' && window.isTokenExpired(token));
+        if (tokenExpirado) {
+            const reauth = confirm(
+                'Tu sesión de Microsoft ha expirado o requiere autorización para sincronizar el calendario.\n\n' +
+                '¿Deseas iniciar sesión con tu cuenta de Microsoft en este momento?'
+            );
+            if (reauth && typeof window.renovarTokenMicrosoft === 'function') {
+                token = await window.renovarTokenMicrosoft();
+            }
+        }
+    }
+
+    if (!token) {
+        showToast('No se cuenta con una sesión activa de Microsoft para sincronizar con Outlook.', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/reservas/${idReserva}/sync-outlook`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ outlookAccessToken: token })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al comunicarse con el servidor');
+        }
+
+        const data = await res.json();
+        const sync = data.outlookSync;
+
+        if (sync && sync.success) {
+            showToast('¡Evento sincronizado exitosamente con tu calendario de Outlook!', 'success');
+            await loadAllData();
+            // Si el modal de éxito está abierto, actualizarlo con el enlace
+            mostrarModalExitoReserva(idReserva, sync);
+        } else {
+            const msg = sync ? sync.message : 'Error al sincronizar con Outlook';
+            if (sync && sync.errorType === 'TOKEN_EXPIRED') {
+                showToast('El token de Microsoft expiró. Debes volver a iniciar sesión para sincronizar.', 'warning');
+            } else if (sync && sync.errorType === 'INSUFFICIENT_PERMISSIONS') {
+                showToast('Tu cuenta no tiene permisos para escribir en el calendario (Calendars.ReadWrite).', 'warning');
+            } else {
+                showToast(`Aviso de Outlook: ${msg}`, 'warning');
+            }
+        }
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+window.verificarTokenOutlookParaUI = verificarTokenOutlookParaUI;
+window.sincronizarReservaConOutlookManual = sincronizarReservaConOutlookManual;
+
