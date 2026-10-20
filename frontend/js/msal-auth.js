@@ -258,7 +258,7 @@ async function loginConMicrosoft() {
             }
 
             const loginRequest = {
-                scopes: ['User.Read', 'Calendars.ReadWrite', 'openid', 'profile', 'email']
+                scopes: ['openid', 'profile', 'email', 'User.Read']
             };
 
             const response = await msalInstance.loginPopup(loginRequest);
@@ -295,7 +295,7 @@ function ejecutarOAuth2MicrosoftDirecto(clientId, tenantId) {
         client_id: clientId,
         response_type: 'id_token token',
         redirect_uri: redirectUri,
-        scope: 'openid profile email Calendars.ReadWrite User.Read',
+        scope: 'openid profile email User.Read',
         response_mode: 'fragment',
         state: state,
         nonce: nonce
@@ -826,7 +826,7 @@ async function getMicrosoftAccessToken(solicitarRenovacionSiExpiro = false) {
             const accounts = msalInstance.getAllAccounts();
             if (accounts.length > 0) {
                 const response = await msalInstance.acquireTokenSilent({
-                    scopes: ['Calendars.ReadWrite', 'User.Read'],
+                    scopes: ['openid', 'profile', 'User.Read'],
                     account: accounts[0]
                 });
                 if (response && response.accessToken) {
@@ -860,7 +860,7 @@ async function renovarTokenMicrosoft() {
     if (window.msal && msalInstance) {
         try {
             const response = await msalInstance.acquireTokenPopup({
-                scopes: ['Calendars.ReadWrite', 'User.Read', 'openid', 'profile']
+                scopes: ['openid', 'profile', 'User.Read']
             });
             if (response && response.accessToken) {
                 guardarTokenMicrosoftEnSesion(response.accessToken);
